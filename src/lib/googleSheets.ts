@@ -66,7 +66,7 @@ export interface ClientData {
 }
 
 class GoogleSheetsService {
-  private sheets: any
+  private sheets: ReturnType<typeof google.sheets>
 
   constructor() {
     const auth = new google.auth.GoogleAuth({
@@ -139,7 +139,7 @@ class GoogleSheetsService {
               registrationDate = parsedDate
             }
           }
-        } catch (error) {
+        } catch {
           console.warn('Invalid date format:', registrationDateStr)
         }
       }
@@ -190,14 +190,14 @@ class GoogleSheetsService {
       if (submittedStr) {
         try {
           // Format: DD.MM.YYYY HH:MM:SS
-          const [datePart, timePart] = submittedStr.split(' ')
+          const [datePart] = submittedStr.split(' ')
           if (datePart) {
             const [day, month, year] = datePart.split('.')
             if (day && month && year) {
               submittedAt = new Date(parseInt(year), parseInt(month) - 1, parseInt(day))
             }
           }
-        } catch (error) {
+        } catch {
           console.warn('Invalid submitted date format:', submittedStr)
         }
       }

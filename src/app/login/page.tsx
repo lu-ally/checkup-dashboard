@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { signIn, getSession } from "next-auth/react"
+import { signIn } from "next-auth/react"
 import { useRouter } from "next/navigation"
 
 export default function LoginPage() {
@@ -28,7 +28,7 @@ export default function LoginPage() {
       } else {
         router.push("/dashboard")
       }
-    } catch (error) {
+    } catch {
       setError("Ein Fehler ist aufgetreten")
     } finally {
       setIsLoading(false)

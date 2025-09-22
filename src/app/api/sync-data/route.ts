@@ -1,10 +1,15 @@
-import { NextRequest, NextResponse } from 'next/server'
+import { NextResponse } from 'next/server'
 import { googleSheetsService } from '@/lib/googleSheets'
 import { prisma } from '@/lib/prisma'
 
-export async function POST(request: NextRequest) {
+/**
+ * @deprecated This endpoint is deprecated. Use /api/sync-detailed-data instead.
+ * This endpoint only syncs basic client data without detailed assessments.
+ */
+export async function POST() {
   try {
-    console.log('Starting data synchronization...')
+    console.log('⚠️  [DEPRECATED] Starting basic data synchronization...')
+    console.log('⚠️  This endpoint is deprecated. Use /api/sync-detailed-data for full functionality.')
 
     // Fetch data from Google Sheets
     const clientData = await googleSheetsService.fetchClientData()

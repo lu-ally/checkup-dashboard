@@ -1,8 +1,8 @@
-import { NextRequest, NextResponse } from 'next/server'
+import { NextResponse } from 'next/server'
 import { googleSheetsService } from '@/lib/googleSheets'
 import { prisma } from '@/lib/prisma'
 
-export async function POST(request: NextRequest) {
+export async function POST() {
   try {
     console.log('Starting detailed multi-tab data synchronization...')
 

@@ -1,7 +1,7 @@
 "use client"
 
 import { useSession } from "next-auth/react"
-import { useEffect, useState } from "react"
+import { useCallback, useEffect, useState } from "react"
 import { ClientDataChart } from "./components/ClientDataChart"
 import { DataTable } from "./components/DataTable"
 import { SyncButton } from "./components/SyncButton"
@@ -62,7 +62,7 @@ export default function DashboardPage() {
   const [coachFilter, setCoachFilter] = useState("")
   const [coaches, setCoaches] = useState<{ id: string; name: string }[]>([])
 
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     try {
       const url = new URL("/api/client-data", window.location.origin)
       if (coachFilter) {
@@ -77,7 +77,7 @@ export default function DashboardPage() {
         // Extract unique coaches for admin filter
         const uniqueCoaches = Array.from(
           new Set(data.map((item: ClientData) => item.coachName))
-        ).map(name => ({ id: name, name }))
+        ).map((name) => ({ id: name as string, name: name as string }))
         setCoaches(uniqueCoaches)
       }
     } catch (error) {
@@ -85,11 +85,11 @@ export default function DashboardPage() {
     } finally {
       setLoading(false)
     }
-  }
+  }, [coachFilter])
 
   useEffect(() => {
     fetchData()
-  }, [coachFilter])
+  }, [coachFilter, fetchData])
 
   if (loading) {
     return (
@@ -106,7 +106,8 @@ export default function DashboardPage() {
           Klient:innen Daten
         </h2>
         <div className="flex items-center space-x-4">
-          {session?.user.role === "ADMIN" && (
+          {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
+          {session?.user && (session.user as any).role === "ADMIN" && (
             <select
               value={coachFilter}
               onChange={(e) => setCoachFilter(e.target.value)}

@@ -88,6 +88,12 @@ export function DataTable({ data }: DataTableProps) {
     ? [...data].sort((a, b) => {
         const aValue = a[sortField as keyof ClientData]
         const bValue = b[sortField as keyof ClientData]
+
+        // Handle null/undefined values
+        if (aValue == null && bValue == null) return 0
+        if (aValue == null) return sortDirection === 'asc' ? -1 : 1
+        if (bValue == null) return sortDirection === 'asc' ? 1 : -1
+
         if (aValue < bValue) return sortDirection === 'asc' ? -1 : 1
         if (aValue > bValue) return sortDirection === 'asc' ? 1 : -1
         return 0
@@ -95,6 +101,12 @@ export function DataTable({ data }: DataTableProps) {
     : [...filteredAssessments].sort((a, b) => {
         const aValue = a[sortField as keyof (Assessment & { clientName: string; coachName: string; status: string })]
         const bValue = b[sortField as keyof (Assessment & { clientName: string; coachName: string; status: string })]
+
+        // Handle null/undefined values
+        if (aValue == null && bValue == null) return 0
+        if (aValue == null) return sortDirection === 'asc' ? -1 : 1
+        if (bValue == null) return sortDirection === 'asc' ? 1 : -1
+
         if (aValue < bValue) return sortDirection === 'asc' ? -1 : 1
         if (aValue > bValue) return sortDirection === 'asc' ? 1 : -1
         return 0

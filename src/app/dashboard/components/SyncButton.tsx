@@ -26,7 +26,7 @@ export function SyncButton({ onSync }: SyncButtonProps) {
       } else {
         throw new Error('Sync failed')
       }
-    } catch (error) {
+    } catch {
       setMessage('❌ Synchronisation fehlgeschlagen')
     } finally {
       setIsLoading(false)
