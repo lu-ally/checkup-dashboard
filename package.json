@@ -7,7 +7,13 @@
     "build": "next build --turbopack",
     "start": "next start",
     "lint": "eslint",
-    "seed": "tsx src/scripts/seed.ts"
+    "seed": "tsx src/scripts/seed.ts",
+    "deploy:vercel": "./scripts/deploy-vercel.sh",
+    "migrate:postgres": "node scripts/migrate-to-postgres.js",
+    "db:generate": "prisma generate",
+    "db:push": "prisma db push",
+    "db:migrate": "prisma migrate deploy",
+    "generate:secret": "node scripts/generate-secret.js"
   },
   "dependencies": {
     "@prisma/client": "^6.16.2",

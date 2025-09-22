@@ -143,8 +143,16 @@ export function DataTable({ data }: DataTableProps) {
     }
   }
 
-  const handleClientClick = (client: ClientData | (Assessment & { clientName: string; coachName: string; status: string; chatLink: string })) => {
-    const chatLink = 'chatLink' in client ? client.chatLink : data.find(c => c.clientName === client.clientName)?.chatLink
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const handleClientClick = (client: any) => {
+    let chatLink: string | undefined
+
+    if ('chatLink' in client) {
+      chatLink = client.chatLink
+    } else if ('clientName' in client) {
+      chatLink = data.find(c => c.clientName === client.clientName)?.chatLink
+    }
+
     if (chatLink) {
       handleChatLinkClick(chatLink)
     }

@@ -1,0 +1,21 @@
+{
+  "env": {
+    "NEXTAUTH_SECRET": "@nextauth-secret",
+    "NEXTAUTH_URL": "@nextauth-url",
+    "DATABASE_URL": "@database-url",
+    "GOOGLE_SHEETS_API_KEY": "@google-sheets-api-key",
+    "GOOGLE_SHEETS_SPREADSHEET_ID": "@google-sheets-spreadsheet-id",
+    "GOOGLE_SERVICE_ACCOUNT_EMAIL": "@google-service-account-email",
+    "GOOGLE_PRIVATE_KEY": "@google-private-key"
+  },
+  "build": {
+    "env": {
+      "NEXT_TELEMETRY_DISABLED": "1"
+    }
+  },
+  "functions": {
+    "app/api/**": {
+      "maxDuration": 30
+    }
+  }
+}

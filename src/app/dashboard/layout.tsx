@@ -69,7 +69,8 @@ export default function DashboardLayout({
             </div>
             <div className="flex items-center space-x-4">
               <span className="text-sm text-gray-700">
-                {session.user.name} ({session.user.role})
+                {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
+                {session.user?.name} ({(session.user as any)?.role})
               </span>
               <button
                 onClick={() => signOut()}

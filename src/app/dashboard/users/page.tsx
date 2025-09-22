@@ -227,7 +227,7 @@ function UserForm({ user, onClose }: UserFormProps) {
       const url = user ? `/api/users/${user.id}` : "/api/users"
       const method = user ? "PUT" : "POST"
 
-      const body: any = {
+      const body: Record<string, string> = {
         name: formData.name,
         email: formData.email,
         role: formData.role,

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth'
+import { getServerSession } from 'next-auth/next'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import bcrypt from 'bcryptjs'
@@ -7,7 +7,7 @@ import bcrypt from 'bcryptjs'
 // GET /api/users/[id] - Einzelnen User abrufen
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await getServerSession(authOptions)
@@ -16,7 +16,7 @@ export async function GET(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const { id } = params
+    const { id } = await params
 
     // User können nur ihre eigenen Daten sehen, außer ADMINs
     if (session.user.role !== 'ADMIN' && session.user.id !== id) {
@@ -53,7 +53,7 @@ export async function GET(
 // PUT /api/users/[id] - User bearbeiten (nur für ADMIN oder eigene Daten)
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await getServerSession(authOptions)
@@ -62,7 +62,7 @@ export async function PUT(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const { id } = params
+    const { id } = await params
     const body = await request.json()
     const { email, password, name, role, coachId } = body
 
@@ -96,7 +96,7 @@ export async function PUT(
     }
 
     // Update-Daten vorbereiten
-    const updateData: any = {}
+    const updateData: Record<string, string | null> = {}
 
     if (name) updateData.name = name
     if (email) updateData.email = email
@@ -150,7 +150,7 @@ export async function PUT(
 // DELETE /api/users/[id] - User löschen (nur für ADMIN)
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await getServerSession(authOptions)
@@ -159,7 +159,7 @@ export async function DELETE(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const { id } = params
+    const { id } = await params
 
     // Prüfen ob User existiert
     const existingUser = await prisma.user.findUnique({

@@ -1,0 +1,130 @@
+// Production Prisma schema file for PostgreSQL
+// Use this for Vercel/modern hosting platforms
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id       String @id @default(cuid())
+  email    String @unique
+  password String
+  name     String
+  role     Role   @default(COACH)
+  coachId  String? // If this is a psychologist, this references their coach ID
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+// Client overview/metadata
+model Client {
+  id               String @id @default(cuid())
+  clientId         String @unique
+  clientName       String
+  coachName        String
+  status           String
+  registrationDate DateTime
+  weeks            Float
+  chatLink         String
+
+  // Basic wellbeing from overview tab
+  wellbeingT0Basic Int?
+  wellbeingT4Basic Int?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relationships
+  assessments Assessment[]
+
+  @@index([clientId])
+  @@index([coachName])
+  @@index([status])
+}
+
+// Detailed assessment data from T0/T4 tabs
+model Assessment {
+  id        String @id @default(cuid())
+  clientId  String
+  timepoint String // T0 or T4
+  submittedAt DateTime
+
+  // Core wellbeing (0-10)
+  wellbeing Int?
+
+  // Psychological burdens (Gering/Mittel/Stark)
+  stress            String?
+  exhaustion        String?
+  anxiety           String?
+  depression        String?
+  selfDoubt         String?
+  sleepProblems     String?
+  tension           String?
+  irritability      String?
+  socialWithdrawal  String?
+  other             String?
+
+  // Life areas (0-10)
+  workArea    Int?
+  privateArea Int?
+
+  // Self-care (Selten/Mittel/Oft)
+  adequateSleep   String?
+  healthyEating   String?
+  sufficientRest  String?
+  exercise        String?
+  setBoundaries   String?
+  timeForBeauty   String?
+  shareEmotions   String?
+  liveValues      String?
+
+  // T4-specific coaching evaluation
+  trust                 String?
+  genuineInterest       String?
+  mutualUnderstanding   String?
+  goalAlignment         String?
+  learningExperience    Int?
+  progressAchievement   Int?
+  generalSatisfaction   Int?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relationships
+  client Client @relation(fields: [clientId], references: [clientId])
+
+  @@index([clientId])
+  @@index([timepoint])
+  @@index([submittedAt])
+}
+
+// Keep old model for backward compatibility during migration
+model ClientData {
+  id          String @id @default(cuid())
+  clientId    String
+  clientName  String
+  coachName   String
+  wellbeingT0 Int?
+  wellbeingT4 Int?
+  status      String
+  registrationDate DateTime
+  weeks       Float
+  chatLink    String
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([clientId])
+  @@index([coachName])
+}
+
+enum Role {
+  ADMIN
+  COACH
+}
