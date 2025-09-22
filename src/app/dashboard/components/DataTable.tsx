@@ -76,7 +76,8 @@ export function DataTable({ data }: DataTableProps) {
       ...assessment,
       clientName: client.clientName,
       coachName: client.coachName,
-      status: client.status
+      status: client.status,
+      chatLink: client.chatLink
     }))
   )
 
@@ -133,6 +134,19 @@ export function DataTable({ data }: DataTableProps) {
         return 'bg-red-100 text-red-800'
       default:
         return 'bg-gray-100 text-gray-800'
+    }
+  }
+
+  const handleChatLinkClick = (chatLink: string) => {
+    if (chatLink) {
+      window.open(chatLink, '_blank', 'noopener,noreferrer')
+    }
+  }
+
+  const handleClientClick = (client: ClientData | (Assessment & { clientName: string; coachName: string; status: string; chatLink: string })) => {
+    const chatLink = 'chatLink' in client ? client.chatLink : data.find(c => c.clientName === client.clientName)?.chatLink
+    if (chatLink) {
+      handleChatLinkClick(chatLink)
     }
   }
 
@@ -233,7 +247,13 @@ export function DataTable({ data }: DataTableProps) {
               {(sortedData as ClientData[]).map((client) => (
                 <tr key={client.id} className="hover:bg-gray-50">
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                    {client.clientName}
+                    <button
+                      onClick={() => handleClientClick(client)}
+                      className="text-blue-600 hover:text-blue-800 hover:underline cursor-pointer font-medium"
+                      title="Chat öffnen"
+                    >
+                      {client.clientName}
+                    </button>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                     {client.coachName}
@@ -340,10 +360,16 @@ export function DataTable({ data }: DataTableProps) {
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
-              {(sortedData as (Assessment & { clientName: string; coachName: string; status: string })[]).map((assessment) => (
+              {(sortedData as (Assessment & { clientName: string; coachName: string; status: string; chatLink: string })[]).map((assessment) => (
                 <tr key={assessment.id} className="hover:bg-gray-50">
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                    {assessment.clientName}
+                    <button
+                      onClick={() => handleClientClick(assessment)}
+                      className="text-blue-600 hover:text-blue-800 hover:underline cursor-pointer font-medium"
+                      title="Chat öffnen"
+                    >
+                      {assessment.clientName}
+                    </button>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                     <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
