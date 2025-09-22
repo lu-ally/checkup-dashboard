@@ -1,0 +1,60 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = "file:./dev.db"
+}
+
+model User {
+  id       String @id @default(cuid())
+  email    String @unique
+  password String
+  name     String
+  role     Role   @default(COACH)
+  coachId  String? // If this is a psychologist, this references their coach ID
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relationships
+  clientData ClientData[]
+}
+
+model ClientData {
+  id          String @id @default(cuid())
+  clientId    String
+  clientName  String
+  coachId     String
+  timepoint   String // T0 or T4
+  timestamp   DateTime
+
+  // Survey responses (0-10 scale)
+  wellbeing   Int
+  stress      Int
+  mood        Int
+  anxiety     Int
+
+  // Categorical scales (Niedrig, Mittel, Hoch)
+  sleepQuality String
+  motivation   String
+  socialSupport String
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relationships
+  coach User @relation(fields: [coachId], references: [id])
+
+  @@index([coachId])
+  @@index([clientId])
+}
+
+enum Role {
+  ADMIN
+  COACH
+}
