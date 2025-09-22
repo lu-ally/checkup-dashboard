@@ -19,25 +19,23 @@ export async function GET(request: NextRequest) {
     // Role-based access control
     if (session.user.role === 'COACH') {
       // Coaches can only see their own client data
-      whereClause.coachId = session.user.id
+      whereClause.coachName = session.user.name
     } else if (session.user.role === 'ADMIN' && coachFilter) {
-      // Admins can filter by coach
-      whereClause.coachId = coachFilter
+      // Admins can filter by coach name
+      whereClause.coachName = coachFilter
     }
 
-    const clientData = await prisma.clientData.findMany({
+    const clientData = await prisma.client.findMany({
       where: whereClause,
       include: {
-        coach: {
-          select: {
-            id: true,
-            name: true,
-            email: true
+        assessments: {
+          orderBy: {
+            timepoint: 'asc'
           }
         }
       },
       orderBy: {
-        timestamp: 'desc'
+        registrationDate: 'desc'
       }
     })
 

@@ -4,30 +4,51 @@ import { prisma } from '@/lib/prisma'
 
 export async function POST(request: NextRequest) {
   try {
+    console.log('Starting data synchronization...')
+
     // Fetch data from Google Sheets
     const clientData = await googleSheetsService.fetchClientData()
+    console.log(`Fetched ${clientData.length} records from Google Sheets`)
 
     // Clear existing data and insert new data
     await prisma.clientData.deleteMany()
+    console.log('Cleared existing data')
 
-    const insertData = clientData.map(data => ({
-      clientId: data.clientId,
-      clientName: data.clientName,
-      coachId: data.coachId,
-      timepoint: data.timepoint,
-      timestamp: data.timestamp,
-      wellbeing: data.wellbeing,
-      stress: data.stress,
-      mood: data.mood,
-      anxiety: data.anxiety,
-      sleepQuality: data.sleepQuality,
-      motivation: data.motivation,
-      socialSupport: data.socialSupport,
-    }))
+    // Validate and sanitize data before insertion
+    const insertData = clientData
+      .filter(data => data.clientId) // Only include records with client IDs
+      .map(data => {
+        // Ensure all required fields are present
+        return {
+          clientId: data.clientId,
+          clientName: data.clientName || `Klient ${data.clientId.substring(0, 8)}`,
+          coachName: data.coachName || 'Unbekannter Coach',
+          wellbeingT0: data.wellbeingT0, // Can be null
+          wellbeingT4: data.wellbeingT4, // Can be null
+          status: data.status || 'Unbekannt',
+          registrationDate: data.registrationDate,
+          weeks: isNaN(data.weeks) ? 0 : data.weeks,
+          chatLink: data.chatLink || '',
+        }
+      })
 
-    await prisma.clientData.createMany({
-      data: insertData
-    })
+    console.log(`Inserting ${insertData.length} validated records`)
+
+    if (insertData.length === 0) {
+      return NextResponse.json({
+        message: 'No valid data to synchronize',
+        count: 0
+      })
+    }
+
+    // Insert records one by one to avoid batch validation issues
+    for (const record of insertData) {
+      await prisma.clientData.create({
+        data: record
+      })
+    }
+
+    console.log('Data synchronization completed successfully')
 
     return NextResponse.json({
       message: 'Data synchronized successfully',
@@ -35,8 +56,15 @@ export async function POST(request: NextRequest) {
     })
   } catch (error) {
     console.error('Sync error:', error)
+
+    // Provide more detailed error information
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error'
+
     return NextResponse.json(
-      { error: 'Failed to sync data' },
+      {
+        error: 'Failed to sync data',
+        details: errorMessage
+      },
       { status: 500 }
     )
   }

@@ -20,38 +20,108 @@ model User {
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-
-  // Relationships
-  clientData ClientData[]
 }
 
-model ClientData {
-  id          String @id @default(cuid())
-  clientId    String
-  clientName  String
-  coachId     String
-  timepoint   String // T0 or T4
-  timestamp   DateTime
+// Client overview/metadata
+model Client {
+  id               String @id @default(cuid())
+  clientId         String @unique
+  clientName       String
+  coachName        String
+  status           String
+  registrationDate DateTime
+  weeks            Float
+  chatLink         String
 
-  // Survey responses (0-10 scale)
-  wellbeing   Int
-  stress      Int
-  mood        Int
-  anxiety     Int
-
-  // Categorical scales (Niedrig, Mittel, Hoch)
-  sleepQuality String
-  motivation   String
-  socialSupport String
+  // Basic wellbeing from overview tab
+  wellbeingT0Basic Int?
+  wellbeingT4Basic Int?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   // Relationships
-  coach User @relation(fields: [coachId], references: [id])
+  assessments Assessment[]
 
-  @@index([coachId])
   @@index([clientId])
+  @@index([coachName])
+  @@index([status])
+}
+
+// Detailed assessment data from T0/T4 tabs
+model Assessment {
+  id        String @id @default(cuid())
+  clientId  String
+  timepoint String // T0 or T4
+  submittedAt DateTime
+
+  // Core wellbeing (0-10)
+  wellbeing Int?
+
+  // Psychological burdens (Gering/Mittel/Stark)
+  stress            String?
+  exhaustion        String?
+  anxiety           String?
+  depression        String?
+  selfDoubt         String?
+  sleepProblems     String?
+  tension           String?
+  irritability      String?
+  socialWithdrawal  String?
+  other             String?
+
+  // Life areas (0-10)
+  workArea    Int?
+  privateArea Int?
+
+  // Self-care (Selten/Mittel/Oft)
+  adequateSleep   String?
+  healthyEating   String?
+  sufficientRest  String?
+  exercise        String?
+  setBoundaries   String?
+  timeForBeauty   String?
+  shareEmotions   String?
+  liveValues      String?
+
+  // T4-specific coaching evaluation
+  trust                 String?
+  genuineInterest       String?
+  mutualUnderstanding   String?
+  goalAlignment         String?
+  learningExperience    Int?
+  progressAchievement   Int?
+  generalSatisfaction   Int?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relationships
+  client Client @relation(fields: [clientId], references: [clientId])
+
+  @@index([clientId])
+  @@index([timepoint])
+  @@index([submittedAt])
+}
+
+// Keep old model for backward compatibility during migration
+model ClientData {
+  id          String @id @default(cuid())
+  clientId    String
+  clientName  String
+  coachName   String
+  wellbeingT0 Int?
+  wellbeingT4 Int?
+  status      String
+  registrationDate DateTime
+  weeks       Float
+  chatLink    String
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([clientId])
+  @@index([coachName])
 }
 
 enum Role {

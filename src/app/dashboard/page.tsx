@@ -6,25 +6,53 @@ import { ClientDataChart } from "./components/ClientDataChart"
 import { DataTable } from "./components/DataTable"
 import { SyncButton } from "./components/SyncButton"
 
+interface Assessment {
+  id: string
+  clientId: string
+  timepoint: string
+  submittedAt: Date
+  wellbeing: number | null
+  stress: string | null
+  exhaustion: string | null
+  anxiety: string | null
+  depression: string | null
+  selfDoubt: string | null
+  sleepProblems: string | null
+  tension: string | null
+  irritability: string | null
+  socialWithdrawal: string | null
+  other: string | null
+  workArea: number | null
+  privateArea: number | null
+  adequateSleep: string | null
+  healthyEating: string | null
+  sufficientRest: string | null
+  exercise: string | null
+  setBoundaries: string | null
+  timeForBeauty: string | null
+  shareEmotions: string | null
+  liveValues: string | null
+  trust?: string | null
+  genuineInterest?: string | null
+  mutualUnderstanding?: string | null
+  goalAlignment?: string | null
+  learningExperience?: number | null
+  progressAchievement?: number | null
+  generalSatisfaction?: number | null
+}
+
 interface ClientData {
   id: string
   clientId: string
   clientName: string
-  coachId: string
-  timepoint: string
-  timestamp: string
-  wellbeing: number
-  stress: number
-  mood: number
-  anxiety: number
-  sleepQuality: string
-  motivation: string
-  socialSupport: string
-  coach: {
-    id: string
-    name: string
-    email: string
-  }
+  coachName: string
+  status: string
+  registrationDate: string
+  weeks: number
+  chatLink: string
+  wellbeingT0Basic: number | null
+  wellbeingT4Basic: number | null
+  assessments: Assessment[]
 }
 
 export default function DashboardPage() {
@@ -48,8 +76,8 @@ export default function DashboardPage() {
 
         // Extract unique coaches for admin filter
         const uniqueCoaches = Array.from(
-          new Map(data.map((item: ClientData) => [item.coach.id, item.coach])).values()
-        )
+          new Set(data.map((item: ClientData) => item.coachName))
+        ).map(name => ({ id: name, name }))
         setCoaches(uniqueCoaches)
       }
     } catch (error) {
@@ -86,7 +114,7 @@ export default function DashboardPage() {
             >
               <option value="">Alle Coaches</option>
               {coaches.map((coach) => (
-                <option key={coach.id} value={coach.id}>
+                <option key={coach.name} value={coach.name}>
                   {coach.name}
                 </option>
               ))}

@@ -15,13 +15,13 @@ export function SyncButton({ onSync }: SyncButtonProps) {
     setMessage('')
 
     try {
-      const response = await fetch('/api/sync-data', {
+      const response = await fetch('/api/sync-detailed-data', {
         method: 'POST',
       })
 
       if (response.ok) {
         const result = await response.json()
-        setMessage(`✅ ${result.count} Datensätze synchronisiert`)
+        setMessage(`✅ ${result.clientsCreated} Klienten und ${result.assessmentsCreated} Bewertungen synchronisiert`)
         onSync() // Refresh the data in parent component
       } else {
         throw new Error('Sync failed')
