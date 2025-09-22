@@ -13,7 +13,8 @@
     "db:generate": "prisma generate",
     "db:push": "prisma db push",
     "db:migrate": "prisma migrate deploy",
-    "generate:secret": "node scripts/generate-secret.js"
+    "generate:secret": "node scripts/generate-secret.js",
+    "setup:supabase": "node scripts/setup-supabase.js"
   },
   "dependencies": {
     "@prisma/client": "^6.16.2",
