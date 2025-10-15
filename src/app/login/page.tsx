@@ -23,13 +23,23 @@ export default function LoginPage() {
         redirect: false,
       })
 
+      console.log("Login result:", result)
+
       if (result?.error) {
         setError("Ungültige Anmeldedaten")
-      } else {
+        console.error("Login error:", result.error)
+      } else if (result?.ok) {
+        // Erfolgreicher Login
+        console.log("Login successful, redirecting...")
         router.push("/dashboard")
+        router.refresh() // Force refresh to update session
+      } else {
+        setError("Login fehlgeschlagen")
+        console.error("Unexpected login result:", result)
       }
-    } catch {
+    } catch (error) {
       setError("Ein Fehler ist aufgetreten")
+      console.error("Login exception:", error)
     } finally {
       setIsLoading(false)
     }

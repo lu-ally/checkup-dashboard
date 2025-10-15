@@ -3,6 +3,7 @@ import { getServerSession } from 'next-auth/next'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import bcrypt from 'bcryptjs'
+import { createUserSchema, validateRequest } from '@/lib/validation'
 
 // GET /api/users - Liste aller User (nur für ADMIN)
 export async function GET() {
@@ -49,22 +50,17 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json()
-    const { email, password, name, role, coachId } = body
 
-    // Validation
-    if (!email || !password || !name || !role) {
+    // Validate input with Zod
+    const validation = validateRequest(createUserSchema, body)
+    if (!validation.success) {
       return NextResponse.json(
-        { error: 'Email, password, name and role are required' },
+        { error: validation.error },
         { status: 400 }
       )
     }
 
-    if (!['ADMIN', 'COACH'].includes(role)) {
-      return NextResponse.json(
-        { error: 'Role must be ADMIN or COACH' },
-        { status: 400 }
-      )
-    }
+    const { email, password, name, role, coachId } = validation.data
 
     // Prüfen ob Email bereits existiert
     const existingUser = await prisma.user.findUnique({

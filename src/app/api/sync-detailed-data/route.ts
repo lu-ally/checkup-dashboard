@@ -1,16 +1,44 @@
-import { NextResponse } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
+import { getServerSession } from 'next-auth/next'
+import { authOptions } from '@/lib/auth'
 import { googleSheetsService } from '@/lib/googleSheets'
 import { prisma } from '@/lib/prisma'
+import { rateLimit, getClientIp } from '@/lib/rate-limit'
 
-export async function POST() {
+export async function POST(request: NextRequest) {
   try {
+    // Authentication check
+    const session = await getServerSession(authOptions)
+    if (!session || session.user.role !== 'ADMIN') {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
+    // Rate limiting: 3 sync operations per hour
+    const clientIp = getClientIp(request)
+    const rateLimitResult = rateLimit(
+      `sync:${session.user.id}:${clientIp}`,
+      3,
+      60 * 60 * 1000 // 1 hour
+    )
+
+    if (!rateLimitResult.success) {
+      return NextResponse.json(
+        { error: rateLimitResult.error },
+        {
+          status: 429,
+          headers: rateLimitResult.headers
+        }
+      )
+    }
+
     console.log('Starting detailed multi-tab data synchronization...')
 
     // Fetch data from all tabs
     const clientData = await googleSheetsService.fetchClientDataFromMultipleTabs()
     console.log(`Fetched detailed data for ${clientData.length} clients`)
 
-    // Clear existing data
+    // ⚠️ WICHTIG: Alle bestehenden Daten werden gelöscht!
+    // Diese Operation ist irreversibel
     await prisma.assessment.deleteMany()
     await prisma.client.deleteMany()
     console.log('Cleared existing detailed data')

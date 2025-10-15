@@ -3,6 +3,7 @@ import { getServerSession } from 'next-auth/next'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import bcrypt from 'bcryptjs'
+import { updateUserSchema, validateRequest } from '@/lib/validation'
 
 // GET /api/users/[id] - Einzelnen User abrufen
 export async function GET(
@@ -64,7 +65,17 @@ export async function PUT(
 
     const { id } = await params
     const body = await request.json()
-    const { email, password, name, role, coachId } = body
+
+    // Validate input with Zod
+    const validation = validateRequest(updateUserSchema, body)
+    if (!validation.success) {
+      return NextResponse.json(
+        { error: validation.error },
+        { status: 400 }
+      )
+    }
+
+    const { email, password, name, role, coachId } = validation.data
 
     // User können nur ihre eigenen Daten bearbeiten, außer ADMINs
     // Nur ADMINs können Rollen ändern
@@ -103,12 +114,6 @@ export async function PUT(
 
     // Nur ADMIN kann Rolle ändern
     if (role && session.user.role === 'ADMIN') {
-      if (!['ADMIN', 'COACH'].includes(role)) {
-        return NextResponse.json(
-          { error: 'Role must be ADMIN or COACH' },
-          { status: 400 }
-        )
-      }
       updateData.role = role
     }
 

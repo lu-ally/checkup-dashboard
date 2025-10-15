@@ -35,6 +35,7 @@ yarn-error.log*
 .env.local
 .env.production
 .env.development
+
 # Allow .env.example
 !.env.example
 
@@ -50,6 +51,11 @@ next-env.d.ts
 # Database files
 *.db
 *.db-journal
+dev.db
 
 # Production secrets
 production.db
+
+#Security
+SECURITY.md
+

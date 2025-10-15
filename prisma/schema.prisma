@@ -1,12 +1,13 @@
-// Production Prisma schema file for PostgreSQL
-// Use this for Vercel/modern hosting platforms
+// Development: SQLite (für localhost)
+// Production: PostgreSQL (für Vercel/Supabase)
+// Tipp: Nutze DATABASE_URL in .env um zwischen beiden zu wechseln
 
 generator client {
   provider = "prisma-client-js"
 }
 
 datasource db {
-  provider = "postgresql"
+  provider = "sqlite"
   url      = env("DATABASE_URL")
 }
 
