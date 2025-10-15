@@ -1,13 +1,13 @@
-// Development: SQLite (für localhost)
 // Production: PostgreSQL (für Vercel/Supabase)
-// Tipp: Nutze DATABASE_URL in .env um zwischen beiden zu wechseln
+// Development: SQLite (für localhost)
+// WICHTIG: Für Vercel muss provider = "postgresql" sein!
 
 generator client {
   provider = "prisma-client-js"
 }
 
 datasource db {
-  provider = "sqlite"
+  provider = "postgresql"
   url      = env("DATABASE_URL")
 }
 

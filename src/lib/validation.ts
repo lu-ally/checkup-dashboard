@@ -6,7 +6,7 @@ export const createUserSchema = z.object({
   password: z.string().min(8, 'Passwort muss mindestens 8 Zeichen lang sein').max(100),
   name: z.string().min(2, 'Name muss mindestens 2 Zeichen lang sein').max(255),
   role: z.enum(['ADMIN', 'COACH'], {
-    errorMap: () => ({ message: 'Rolle muss ADMIN oder COACH sein' })
+    message: 'Rolle muss ADMIN oder COACH sein'
   }),
   coachId: z.string().optional().nullable()
 })
@@ -31,7 +31,7 @@ export function validateRequest<T>(schema: z.ZodSchema<T>, data: unknown): { suc
     return { success: true, data: validated }
   } catch (error) {
     if (error instanceof z.ZodError) {
-      const firstError = error.errors[0]
+      const firstError = error.issues[0]
       return {
         success: false,
         error: firstError?.message || 'Validierung fehlgeschlagen'
