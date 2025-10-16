@@ -19,13 +19,19 @@
 
 | Variable | Wert | Notizen |
 |----------|------|---------|
-| `DATABASE_URL` | `postgres://postgres.[project-id]:[PASSWORD]@aws-0-[REGION].pooler.supabase.com:6543/postgres` | ⚠️ Aus Supabase Dashboard |
+| `DATABASE_URL` | `postgres://postgres.[project-id]:[PASSWORD]@aws-0-[REGION].pooler.supabase.com:6543/postgres?pgbouncer=true&sslmode=require` | ⚠️ **WICHTIG: `pgbouncer=true` Parameter hinzufügen!** |
+| `DIRECT_DATABASE_URL` | `postgres://postgres.[project-id]:[PASSWORD]@aws-0-[REGION].pooler.supabase.com:5432/postgres?sslmode=require` | ⚠️ **Port 5432 für Migrationen (kein pgbouncer)** |
 | `NEXTAUTH_SECRET` | `Ed0RcGZaIPsu4JWVcfYhp0mSk23CKESxFirciGX8K98=` | ✅ Bereits generiert |
 | `NEXTAUTH_URL` | `https://checkup-dashboard.vercel.app` | ✅ Deine Vercel Domain |
 | `GOOGLE_SHEETS_API_KEY` | (leer lassen für jetzt) | ❓ Optional später setzen |
 | `GOOGLE_SHEETS_SPREADSHEET_ID` | `12_voZ1g70UpnneW4ecJvu1T0glC3z1eOdnwxI00s7PY` | ✅ Aus .env.production |
 | `GOOGLE_SERVICE_ACCOUNT_EMAIL` | `checkup-dashboard-api-konto@checkup-dashboard.iam.gserviceaccount.com` | ✅ Aus .env.production |
 | `GOOGLE_PRIVATE_KEY` | `-----BEGIN PRIVATE KEY-----\n[KEY]` | ✅ Aus .env.production |
+
+**🔍 Warum `pgbouncer=true`?**
+- Supabase nutzt PgBouncer als Connection Pooler
+- Ohne diesen Parameter können "prepared statement already exists" Fehler auftreten
+- `DIRECT_DATABASE_URL` (Port 5432) wird für Prisma Migrationen benötigt
 
 ### 3. Database Setup auf Supabase
 
@@ -160,9 +166,27 @@ INSERT INTO "User" (email, password, name, role) VALUES (
 
 ## 🔧 Troubleshooting
 
+### ❌ Error: "prepared statement already exists" (PostgreSQL 42P05)
+
+**Symptom:** Intermittierende Fehler bei Login oder Sync-Operationen mit der Meldung "prepared statement 's0' already exists"
+
+**Ursache:** Prisma nutzt prepared statements, die bei Connection Pooling (PgBouncer) zu Konflikten führen können
+
+**Lösung:**
+1. ✅ **Füge `pgbouncer=true` zur DATABASE_URL hinzu:**
+   ```
+   DATABASE_URL="postgres://...pooler.supabase.com:6543/postgres?pgbouncer=true&sslmode=require"
+   ```
+2. ✅ **Setze `DIRECT_DATABASE_URL` für Migrationen:**
+   ```
+   DIRECT_DATABASE_URL="postgres://...pooler.supabase.com:5432/postgres?sslmode=require"
+   ```
+3. ✅ **Update beide URLs in Vercel Environment Variables**
+4. ✅ **Redeploy die Anwendung**
+
 ### Database Connection Fehler
 - Prüfe dass `DATABASE_URL` korrekt in Vercel gesetzt ist
-- Verwende Transaction Mode (Port 6543) für Vercel
+- Verwende Transaction Mode (Port 6543) für Vercel mit `pgbouncer=true`
 - Stelle sicher, dass das Passwort kein Sonderzeichen-Escaping benötigt
 
 ### Build Fehler
