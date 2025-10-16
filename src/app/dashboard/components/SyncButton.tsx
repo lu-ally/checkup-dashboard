@@ -22,7 +22,12 @@ export function SyncButton({ onSync }: SyncButtonProps) {
       if (response.ok) {
         const result = await response.json()
         setMessage(`✅ ${result.clientsCreated} Klienten und ${result.assessmentsCreated} Bewertungen synchronisiert`)
-        onSync() // Refresh the data in parent component
+
+        // Small delay to ensure database commits are complete
+        await new Promise(resolve => setTimeout(resolve, 500))
+
+        // Refresh the data in parent component
+        await onSync()
       } else {
         throw new Error('Sync failed')
       }

@@ -63,6 +63,7 @@ export default function DashboardPage() {
   const [coaches, setCoaches] = useState<{ id: string; name: string }[]>([])
 
   const fetchData = useCallback(async () => {
+    setLoading(true)
     try {
       const url = new URL("/api/client-data", window.location.origin)
       if (coachFilter) {
