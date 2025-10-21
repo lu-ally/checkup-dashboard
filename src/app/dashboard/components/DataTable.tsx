@@ -1,6 +1,7 @@
 "use client"
 
 import React, { useState } from 'react'
+import { useRouter } from 'next/navigation'
 
 interface Assessment {
   id: string
@@ -56,6 +57,7 @@ interface DataTableProps {
 }
 
 export function DataTable({ data }: DataTableProps) {
+  const router = useRouter()
   const [sortField, setSortField] = useState<string>('registrationDate')
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc')
   const [filterTimepoint, setFilterTimepoint] = useState<string>('')
@@ -216,6 +218,9 @@ export function DataTable({ data }: DataTableProps) {
                 >
                   Klient:in {getSortIcon('clientName')}
                 </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Aktionen
+                </th>
                 <th
                   onClick={() => handleSort('coachName')}
                   className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
@@ -261,6 +266,14 @@ export function DataTable({ data }: DataTableProps) {
                       title="Chat öffnen"
                     >
                       {client.clientName}
+                    </button>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    <button
+                      onClick={() => router.push(`/dashboard/clients/${client.clientId}`)}
+                      className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded text-xs font-medium transition-colors"
+                    >
+                      Details
                     </button>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
@@ -320,6 +333,9 @@ export function DataTable({ data }: DataTableProps) {
                 >
                   Klient:in {getSortIcon('clientName')}
                 </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Aktionen
+                </th>
                 <th
                   onClick={() => handleSort('timepoint')}
                   className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
@@ -377,6 +393,14 @@ export function DataTable({ data }: DataTableProps) {
                       title="Chat öffnen"
                     >
                       {assessment.clientName}
+                    </button>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    <button
+                      onClick={() => router.push(`/dashboard/clients/${assessment.clientId}`)}
+                      className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded text-xs font-medium transition-colors"
+                    >
+                      Details
                     </button>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
