@@ -68,6 +68,17 @@ export default function DashboardLayout({
               )}
             </div>
             <div className="flex items-center space-x-4">
+              {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
+              {session?.user && (session.user as any).role === "ADMIN" && (
+                <a
+                  href="https://docs.google.com/spreadsheets/d/12_voZ1g70UpnneW4ecJvu1T0glC3z1eOdnwxI00s7PY"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="bg-green-600 hover:bg-green-700 text-white px-3 py-2 rounded-md text-sm font-medium transition-colors"
+                >
+                  Zum Google Sheet
+                </a>
+              )}
               <span className="text-sm text-gray-700">
                 {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
                 {session.user?.name} ({(session.user as any)?.role})
