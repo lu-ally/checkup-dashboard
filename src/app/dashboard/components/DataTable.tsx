@@ -188,7 +188,7 @@ export function DataTable({ data }: DataTableProps) {
                     : 'bg-white text-gray-700 hover:bg-gray-50'
                 }`}
               >
-                Bewertungen
+                Zeitpunkte
               </button>
             </div>
             {showView === 'assessments' && (
@@ -235,7 +235,7 @@ export function DataTable({ data }: DataTableProps) {
                   Wohlbefinden T4
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Bewertungen
+                  Zeitpunkte
                 </th>
                 <th
                   onClick={() => handleSort('weeks')}

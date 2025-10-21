@@ -60,6 +60,7 @@ export default function DashboardPage() {
   const [clientData, setClientData] = useState<ClientData[]>([])
   const [loading, setLoading] = useState(true)
   const [coachFilter, setCoachFilter] = useState("")
+  const [showDeleted, setShowDeleted] = useState(false)
   const [coaches, setCoaches] = useState<{ id: string; name: string }[]>([])
 
   const fetchData = useCallback(async () => {
@@ -92,6 +93,11 @@ export default function DashboardPage() {
     fetchData()
   }, [coachFilter, fetchData])
 
+  // Filter data based on showDeleted toggle
+  const filteredData = showDeleted
+    ? clientData
+    : clientData.filter(client => client.status.toLowerCase() !== 'gelöscht')
+
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -109,31 +115,42 @@ export default function DashboardPage() {
         <div className="flex items-center space-x-4">
           {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
           {session?.user && (session.user as any).role === "ADMIN" && (
-            <select
-              value={coachFilter}
-              onChange={(e) => setCoachFilter(e.target.value)}
-              className="border border-gray-300 rounded-md px-3 py-2 text-sm"
-            >
-              <option value="">Alle Coaches</option>
-              {coaches.map((coach) => (
-                <option key={coach.name} value={coach.name}>
-                  {coach.name}
-                </option>
-              ))}
-            </select>
+            <>
+              <select
+                value={coachFilter}
+                onChange={(e) => setCoachFilter(e.target.value)}
+                className="border border-gray-300 rounded-md px-3 py-2 text-sm"
+              >
+                <option value="">Alle Coaches</option>
+                {coaches.map((coach) => (
+                  <option key={coach.name} value={coach.name}>
+                    {coach.name}
+                  </option>
+                ))}
+              </select>
+              <label className="flex items-center space-x-2 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={showDeleted}
+                  onChange={(e) => setShowDeleted(e.target.checked)}
+                  className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                />
+                <span className="text-sm text-gray-700">Gelöscht anzeigen</span>
+              </label>
+            </>
           )}
           <SyncButton onSync={fetchData} />
         </div>
       </div>
 
-      {clientData.length === 0 ? (
+      {filteredData.length === 0 ? (
         <div className="text-center py-12">
           <p className="text-gray-500">Keine Daten verfügbar</p>
         </div>
       ) : (
         <>
-          <ClientDataChart data={clientData} />
-          <DataTable data={clientData} />
+          <ClientDataChart data={filteredData} />
+          <DataTable data={filteredData} />
         </>
       )}
     </div>
