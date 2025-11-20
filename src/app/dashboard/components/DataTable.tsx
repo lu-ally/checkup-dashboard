@@ -267,12 +267,14 @@ export function DataTable({ data }: DataTableProps) {
                     </button>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    <button
-                      onClick={() => window.open(`/dashboard/clients/${client.clientId}`, '_blank', 'noopener,noreferrer')}
-                      className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded text-xs font-medium transition-colors"
+                    <a
+                      href={`/dashboard/clients/${client.clientId}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-block bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded text-xs font-medium transition-colors no-underline"
                     >
                       Details
-                    </button>
+                    </a>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                     {client.coachName}
@@ -394,12 +396,14 @@ export function DataTable({ data }: DataTableProps) {
                     </button>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    <button
-                      onClick={() => window.open(`/dashboard/clients/${assessment.clientId}`, '_blank', 'noopener,noreferrer')}
-                      className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded text-xs font-medium transition-colors"
+                    <a
+                      href={`/dashboard/clients/${assessment.clientId}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-block bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded text-xs font-medium transition-colors no-underline"
                     >
                       Details
-                    </button>
+                    </a>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                     <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
