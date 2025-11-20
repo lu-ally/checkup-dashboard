@@ -1,7 +1,6 @@
 "use client"
 
 import React, { useState } from 'react'
-import { useRouter } from 'next/navigation'
 
 interface Assessment {
   id: string
@@ -57,7 +56,6 @@ interface DataTableProps {
 }
 
 export function DataTable({ data }: DataTableProps) {
-  const router = useRouter()
   const [sortField, setSortField] = useState<string>('registrationDate')
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc')
   const [filterTimepoint, setFilterTimepoint] = useState<string>('')
@@ -270,7 +268,7 @@ export function DataTable({ data }: DataTableProps) {
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                     <button
-                      onClick={() => router.push(`/dashboard/clients/${client.clientId}`)}
+                      onClick={() => window.open(`/dashboard/clients/${client.clientId}`, '_blank', 'noopener,noreferrer')}
                       className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded text-xs font-medium transition-colors"
                     >
                       Details
@@ -397,7 +395,7 @@ export function DataTable({ data }: DataTableProps) {
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                     <button
-                      onClick={() => router.push(`/dashboard/clients/${assessment.clientId}`)}
+                      onClick={() => window.open(`/dashboard/clients/${assessment.clientId}`, '_blank', 'noopener,noreferrer')}
                       className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded text-xs font-medium transition-colors"
                     >
                       Details
