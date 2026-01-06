@@ -4,7 +4,7 @@
  * Generate secure secrets for production deployment
  */
 
-const crypto = require('crypto')
+import crypto from 'crypto'
 
 function generateSecret(length = 32) {
   return crypto.randomBytes(length).toString('base64')

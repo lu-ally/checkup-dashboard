@@ -5,8 +5,8 @@
  * Erstellt Schema und Seed-Daten für die Produktion
  */
 
-const { PrismaClient } = require('@prisma/client')
-const bcrypt = require('bcryptjs')
+import { PrismaClient } from '@prisma/client'
+import bcrypt from 'bcryptjs'
 
 async function setupSupabase() {
   console.log('🚀 Setting up Supabase database...')

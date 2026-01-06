@@ -5,9 +5,7 @@
  * Usage: node scripts/migrate-to-postgres.js
  */
 
-const { PrismaClient } = require('@prisma/client')
-const fs = require('fs')
-const path = require('path')
+import { PrismaClient } from '@prisma/client'
 
 async function migrateData() {
   console.log('🚀 Starting database migration from SQLite to PostgreSQL...')
