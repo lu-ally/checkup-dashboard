@@ -79,9 +79,9 @@ interface ClientDataChartProps {
   data: ClientData[]
 }
 
-interface DatasetWithCounts {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type DatasetWithCounts = any & {
   counts?: number[]
-  [key: string]: unknown
 }
 
 export function ClientDataChart({ data }: ClientDataChartProps) {
