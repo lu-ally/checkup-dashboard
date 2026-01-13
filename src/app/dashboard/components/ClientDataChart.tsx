@@ -79,6 +79,11 @@ interface ClientDataChartProps {
   data: ClientData[]
 }
 
+interface DatasetWithCounts {
+  counts?: number[]
+  [key: string]: unknown
+}
+
 export function ClientDataChart({ data }: ClientDataChartProps) {
   // Flatten assessments and separate by timepoint
   const allAssessments = data.flatMap(client => client.assessments)
@@ -325,7 +330,7 @@ export function ClientDataChart({ data }: ClientDataChartProps) {
           label: function(context: TooltipItem<'bar'>) {
             const label = context.dataset.label || ''
             const value = context.parsed.y
-            const count = (context.dataset as any).counts?.[context.dataIndex] || 0
+            const count = (context.dataset as DatasetWithCounts).counts?.[context.dataIndex] || 0
             return `${label}: ${value.toFixed(1)}/10 (n=${count})`
           }
         }
@@ -354,7 +359,7 @@ export function ClientDataChart({ data }: ClientDataChartProps) {
           label: function(context: TooltipItem<'bar'>) {
             const label = context.dataset.label || ''
             const percentage = context.parsed.y
-            const count = (context.dataset as any).counts?.[context.dataIndex] || 0
+            const count = (context.dataset as DatasetWithCounts).counts?.[context.dataIndex] || 0
             return `${label}: ${percentage.toFixed(1)}% (n=${count})`
           }
         }
@@ -552,10 +557,10 @@ export function ClientDataChart({ data }: ClientDataChartProps) {
                 },
                 tooltip: {
                   callbacks: {
-                    label: function(context: any) {
+                    label: function(context: TooltipItem<'bar'>) {
                       const label = context.dataset.label || ''
                       const percentage = context.parsed.y
-                      const count = context.dataset.counts?.[context.dataIndex] || 0
+                      const count = (context.dataset as DatasetWithCounts).counts?.[context.dataIndex] || 0
                       return `${label}: ${percentage.toFixed(1)}% (n=${count})`
                     }
                   }
@@ -566,7 +571,7 @@ export function ClientDataChart({ data }: ClientDataChartProps) {
                   beginAtZero: true,
                   max: 100,
                   ticks: {
-                    callback: function(value: any) {
+                    callback: function(value: string | number) {
                       return value + '%'
                     }
                   }
@@ -591,10 +596,10 @@ export function ClientDataChart({ data }: ClientDataChartProps) {
                   },
                   tooltip: {
                     callbacks: {
-                      label: function(context: any) {
+                      label: function(context: TooltipItem<'bar'>) {
                         const label = context.dataset.label || ''
                         const value = context.parsed.y
-                        const count = context.dataset.counts?.[context.dataIndex] || 0
+                        const count = (context.dataset as DatasetWithCounts).counts?.[context.dataIndex] || 0
                         return `${label}: ${value.toFixed(1)}/10 (n=${count})`
                       }
                     }
