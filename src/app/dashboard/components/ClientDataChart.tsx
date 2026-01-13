@@ -11,6 +11,7 @@ import {
   Legend,
   LineElement,
   PointElement,
+  TooltipItem,
 } from 'chart.js'
 import { Bar } from 'react-chartjs-2'
 
@@ -84,39 +85,11 @@ export function ClientDataChart({ data }: ClientDataChartProps) {
   const t0Data = allAssessments.filter(assessment => assessment.timepoint === 'T0')
   const t4Data = allAssessments.filter(assessment => assessment.timepoint === 'T4')
 
-  const calculateAverage = (dataset: Assessment[], field: 'wellbeing' | 'workArea' | 'privateArea' | 'learningExperience' | 'progressAchievement' | 'generalSatisfaction') => {
-    const validValues = dataset.filter(item => item[field] !== null).map(item => item[field] as number)
-    if (validValues.length === 0) return 0
-    return validValues.reduce((sum, val) => sum + val, 0) / validValues.length
-  }
-
   const calculateAverageWithCount = (dataset: Assessment[], field: 'wellbeing' | 'workArea' | 'privateArea' | 'learningExperience' | 'progressAchievement' | 'generalSatisfaction') => {
     const validValues = dataset.filter(item => item[field] !== null).map(item => item[field] as number)
     const count = validValues.length
     const average = count === 0 ? 0 : validValues.reduce((sum, val) => sum + val, 0) / count
     return { average, count }
-  }
-
-  const calculateCategoricalCounts = (dataset: Assessment[], field: keyof Pick<Assessment, 'stress' | 'exhaustion' | 'anxiety' | 'depression'>) => {
-    const counts = { Gering: 0, Mittel: 0, Stark: 0 }
-    dataset.forEach(item => {
-      const value = item[field] as keyof typeof counts
-      if (value && value in counts) {
-        counts[value]++
-      }
-    })
-    return counts
-  }
-
-  const calculateSelfCareCounts = (dataset: Assessment[], field: keyof Pick<Assessment, 'adequateSleep' | 'healthyEating' | 'sufficientRest' | 'exercise' | 'setBoundaries' | 'timeForBeauty' | 'shareEmotions' | 'liveValues'>) => {
-    const counts = { Selten: 0, Mittel: 0, Oft: 0 }
-    dataset.forEach(item => {
-      const value = item[field] as keyof typeof counts
-      if (value && value in counts) {
-        counts[value]++
-      }
-    })
-    return counts
   }
 
   const calculateCategoricalPercentages = (dataset: Assessment[], field: keyof Pick<Assessment, 'stress' | 'exhaustion' | 'anxiety' | 'depression'>) => {
@@ -349,10 +322,10 @@ export function ClientDataChart({ data }: ClientDataChartProps) {
       },
       tooltip: {
         callbacks: {
-          label: function(context: any) {
+          label: function(context: TooltipItem<'bar'>) {
             const label = context.dataset.label || ''
             const value = context.parsed.y
-            const count = context.dataset.counts?.[context.dataIndex] || 0
+            const count = (context.dataset as any).counts?.[context.dataIndex] || 0
             return `${label}: ${value.toFixed(1)}/10 (n=${count})`
           }
         }
@@ -378,10 +351,10 @@ export function ClientDataChart({ data }: ClientDataChartProps) {
       },
       tooltip: {
         callbacks: {
-          label: function(context: any) {
+          label: function(context: TooltipItem<'bar'>) {
             const label = context.dataset.label || ''
             const percentage = context.parsed.y
-            const count = context.dataset.counts?.[context.dataIndex] || 0
+            const count = (context.dataset as any).counts?.[context.dataIndex] || 0
             return `${label}: ${percentage.toFixed(1)}% (n=${count})`
           }
         }
@@ -392,7 +365,7 @@ export function ClientDataChart({ data }: ClientDataChartProps) {
         beginAtZero: true,
         max: 100,
         ticks: {
-          callback: function(value: any) {
+          callback: function(value: string | number) {
             return value + '%'
           }
         }
