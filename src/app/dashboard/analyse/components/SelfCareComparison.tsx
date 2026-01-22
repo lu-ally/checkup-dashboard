@@ -31,7 +31,7 @@ const SELFCARE_FIELDS: { field: keyof Assessment; label: string }[] = [
 ]
 
 // Summary Card Component
-function SummaryCard({ label, improved, worsened, unchanged }: FieldSummary) {
+function SummaryCard({ label, improved, worsened, unchanged, total }: FieldSummary) {
   const netChange = improved - worsened
   const trend = netChange > 0 ? 'positive' : netChange < 0 ? 'negative' : 'neutral'
 
@@ -46,9 +46,26 @@ function SummaryCard({ label, improved, worsened, unchanged }: FieldSummary) {
     : trend === 'negative' ? 'text-red-600'
     : 'text-gray-500'
 
+  // Calculate percentages for tooltip
+  const improvedPct = total > 0 ? Math.round((improved / total) * 100) : 0
+  const worsenedPct = total > 0 ? Math.round((worsened / total) * 100) : 0
+  const unchangedPct = total > 0 ? Math.round((unchanged / total) * 100) : 0
+
+  const tooltip = `${label}
+
+Verbessert: ${improved} von ${total} (${improvedPct}%)
+→ Mehr Selbstfürsorge (Selten→Mittel→Oft)
+
+Verschlechtert: ${worsened} von ${total} (${worsenedPct}%)
+→ Weniger Selbstfürsorge (Oft→Mittel→Selten)
+
+Unverändert: ${unchanged} von ${total} (${unchangedPct}%)
+
+Gesamt-Trend: ${trend === 'positive' ? 'Positiv (mehr Verbesserungen)' : trend === 'negative' ? 'Negativ (mehr Verschlechterungen)' : 'Neutral (gleich viele)'}`
+
   return (
-    <div className={`p-3 rounded-lg ${bgColor} text-center`}>
-      <p className="text-xs font-medium text-gray-600 truncate" title={label}>{label}</p>
+    <div className={`p-3 rounded-lg ${bgColor} text-center cursor-help transition-transform hover:scale-105`} title={tooltip}>
+      <p className="text-xs font-medium text-gray-600 truncate">{label}</p>
       <p className={`text-2xl font-bold ${textColor}`}>{trendIcon}</p>
       <p className="text-xs text-gray-500">
         <span className="text-green-600">{improved}↑</span>{' '}

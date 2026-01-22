@@ -109,15 +109,16 @@ export default function AnalysePage() {
         </div>
       ) : (
         <>
-          {/* Wellbeing & Life Areas Comparison */}
+          {/* Row 1: Wellbeing + Coaching */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <WellbeingComparison pairedAssessments={pairedAssessments} />
-            <BurdensComparison pairedAssessments={pairedAssessments} />
+            <CoachingRating pairedAssessments={pairedAssessments} />
           </div>
 
+          {/* Row 2: Burdens + Self-Care */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <BurdensComparison pairedAssessments={pairedAssessments} />
             <SelfCareComparison pairedAssessments={pairedAssessments} />
-            <CoachingRating pairedAssessments={pairedAssessments} />
           </div>
         </>
       )}
