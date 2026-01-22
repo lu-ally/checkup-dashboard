@@ -51,20 +51,10 @@ function SummaryCard({ label, improved, worsened, unchanged, total }: FieldSumma
   const worsenedPct = total > 0 ? Math.round((worsened / total) * 100) : 0
   const unchangedPct = total > 0 ? Math.round((unchanged / total) * 100) : 0
 
-  const tooltip = `${label}
-
-Verbessert: ${improved} von ${total} (${improvedPct}%)
-→ Mehr Selbstfürsorge (Selten→Mittel→Oft)
-
-Verschlechtert: ${worsened} von ${total} (${worsenedPct}%)
-→ Weniger Selbstfürsorge (Oft→Mittel→Selten)
-
-Unverändert: ${unchanged} von ${total} (${unchangedPct}%)
-
-Gesamt-Trend: ${trend === 'positive' ? 'Positiv (mehr Verbesserungen)' : trend === 'negative' ? 'Negativ (mehr Verschlechterungen)' : 'Neutral (gleich viele)'}`
+  const trendText = trend === 'positive' ? 'Positiv' : trend === 'negative' ? 'Negativ' : 'Neutral'
 
   return (
-    <div className={`p-3 rounded-lg ${bgColor} text-center cursor-help transition-transform hover:scale-105`} title={tooltip}>
+    <div className={`relative p-3 rounded-lg ${bgColor} text-center cursor-help transition-transform hover:scale-105 group`}>
       <p className="text-xs font-medium text-gray-600 truncate">{label}</p>
       <p className={`text-2xl font-bold ${textColor}`}>{trendIcon}</p>
       <p className="text-xs text-gray-500">
@@ -72,6 +62,17 @@ Gesamt-Trend: ${trend === 'positive' ? 'Positiv (mehr Verbesserungen)' : trend =
         <span className="text-red-600">{worsened}↓</span>{' '}
         <span className="text-gray-400">{unchanged}→</span>
       </p>
+      {/* Custom Tooltip */}
+      <div className="absolute z-50 bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-2 bg-gray-900 text-white text-xs rounded-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-opacity duration-150 w-56 text-left pointer-events-none">
+        <p className="font-semibold mb-1">{label}</p>
+        <p className="text-green-400">Verbessert: {improved} ({improvedPct}%)</p>
+        <p className="text-gray-400 text-[10px] mb-1">→ Mehr Selbstfürsorge</p>
+        <p className="text-red-400">Verschlechtert: {worsened} ({worsenedPct}%)</p>
+        <p className="text-gray-400 text-[10px] mb-1">→ Weniger Selbstfürsorge</p>
+        <p className="text-gray-300">Unverändert: {unchanged} ({unchangedPct}%)</p>
+        <p className="mt-1 pt-1 border-t border-gray-700">Trend: {trendText}</p>
+        <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-gray-900"></div>
+      </div>
     </div>
   )
 }
