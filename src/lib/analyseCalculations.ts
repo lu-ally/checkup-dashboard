@@ -334,7 +334,10 @@ export function calculateOverallImprovement(pairs: PairedAssessment[]): number {
   })
 
   // Burden metrics - lower is better (so we invert)
-  const burdenFields: (keyof Assessment)[] = ['stress', 'exhaustion', 'anxiety', 'depression']
+  const burdenFields: (keyof Assessment)[] = [
+    'stress', 'exhaustion', 'anxiety', 'depression',
+    'selfDoubt', 'sleepProblems', 'tension', 'irritability', 'socialWithdrawal', 'other'
+  ]
   burdenFields.forEach(field => {
     pairs.forEach(pair => {
       const t0 = getCategoryValue(pair.t0[field] as string | null)
@@ -348,7 +351,10 @@ export function calculateOverallImprovement(pairs: PairedAssessment[]): number {
   })
 
   // Self-care metrics - higher is better
-  const selfCareFields: (keyof Assessment)[] = ['adequateSleep', 'healthyEating', 'sufficientRest', 'exercise']
+  const selfCareFields: (keyof Assessment)[] = [
+    'adequateSleep', 'healthyEating', 'sufficientRest', 'exercise',
+    'setBoundaries', 'timeForBeauty', 'shareEmotions', 'liveValues'
+  ]
   selfCareFields.forEach(field => {
     pairs.forEach(pair => {
       const t0 = getCategoryValue(pair.t0[field] as string | null)

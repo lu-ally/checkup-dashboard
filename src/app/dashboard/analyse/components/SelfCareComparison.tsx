@@ -41,6 +41,10 @@ const SELFCARE_FIELDS: { field: keyof Assessment; label: string }[] = [
   { field: 'healthyEating', label: 'Ernährung' },
   { field: 'sufficientRest', label: 'Ruhe' },
   { field: 'exercise', label: 'Sport' },
+  { field: 'setBoundaries', label: 'Grenzen' },
+  { field: 'timeForBeauty', label: 'Schönes' },
+  { field: 'shareEmotions', label: 'Gefühle' },
+  { field: 'liveValues', label: 'Werte' },
 ]
 
 export function SelfCareComparison({ pairedAssessments }: SelfCareComparisonProps) {

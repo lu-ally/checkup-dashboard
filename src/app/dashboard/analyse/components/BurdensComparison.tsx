@@ -41,6 +41,12 @@ const BURDEN_FIELDS: { field: keyof Assessment; label: string }[] = [
   { field: 'exhaustion', label: 'Erschöpfung' },
   { field: 'anxiety', label: 'Angst' },
   { field: 'depression', label: 'Depression' },
+  { field: 'selfDoubt', label: 'Selbstzweifel' },
+  { field: 'sleepProblems', label: 'Schlafprobleme' },
+  { field: 'tension', label: 'Anspannung' },
+  { field: 'irritability', label: 'Reizbarkeit' },
+  { field: 'socialWithdrawal', label: 'Rückzug' },
+  { field: 'other', label: 'Anderes' },
 ]
 
 export function BurdensComparison({ pairedAssessments }: BurdensComparisonProps) {
