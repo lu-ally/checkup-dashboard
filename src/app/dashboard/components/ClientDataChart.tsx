@@ -9,8 +9,6 @@ import {
   Title,
   Tooltip,
   Legend,
-  LineElement,
-  PointElement,
   TooltipItem,
 } from 'chart.js'
 import { Bar } from 'react-chartjs-2'
@@ -19,8 +17,6 @@ ChartJS.register(
   CategoryScale,
   LinearScale,
   BarElement,
-  LineElement,
-  PointElement,
   Title,
   Tooltip,
   Legend
@@ -79,321 +75,222 @@ interface ClientDataChartProps {
   data: ClientData[]
 }
 
+interface PairedClient {
+  t0: Assessment
+  t4: Assessment
+}
+
+interface FieldSummary {
+  label: string
+  improved: number
+  worsened: number
+  unchanged: number
+  total: number
+}
+
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type DatasetWithCounts = any & {
   counts?: number[]
 }
 
+// Convert category to numeric value for comparison
+function getCategoryValue(value: string | null): number {
+  if (!value) return 0
+  const normalized = value.toLowerCase().trim()
+  switch (normalized) {
+    case 'gering':
+    case 'selten':
+      return 1
+    case 'mittel':
+      return 2
+    case 'stark':
+    case 'oft':
+      return 3
+    default:
+      return 0
+  }
+}
+
+// Summary Card Component
+function SummaryCard({
+  label,
+  improved,
+  worsened,
+  unchanged,
+  isPositiveMetric
+}: FieldSummary & { isPositiveMetric: boolean }) {
+  const netChange = improved - worsened
+  const trend = netChange > 0 ? 'positive' : netChange < 0 ? 'negative' : 'neutral'
+
+  // For burdens: decrease = good (down arrow green)
+  // For self-care: increase = good (up arrow green)
+  const trendIcon = trend === 'positive'
+    ? (isPositiveMetric ? '↑' : '↓')
+    : trend === 'negative'
+    ? (isPositiveMetric ? '↓' : '↑')
+    : '→'
+
+  const bgColor = trend === 'positive' ? 'bg-green-50'
+    : trend === 'negative' ? 'bg-red-50'
+    : 'bg-gray-50'
+
+  const textColor = trend === 'positive' ? 'text-green-600'
+    : trend === 'negative' ? 'text-red-600'
+    : 'text-gray-500'
+
+  const improvedSymbol = isPositiveMetric ? '↑' : '↓'
+  const worsenedSymbol = isPositiveMetric ? '↓' : '↑'
+
+  return (
+    <div className={`p-3 rounded-lg ${bgColor} text-center`}>
+      <p className="text-xs font-medium text-gray-600 truncate" title={label}>{label}</p>
+      <p className={`text-2xl font-bold ${textColor}`}>{trendIcon}</p>
+      <p className="text-xs text-gray-500">
+        <span className="text-green-600">{improved}{improvedSymbol}</span>{' '}
+        <span className="text-red-600">{worsened}{worsenedSymbol}</span>{' '}
+        <span className="text-gray-400">{unchanged}→</span>
+      </p>
+    </div>
+  )
+}
+
 export function ClientDataChart({ data }: ClientDataChartProps) {
-  // Flatten assessments and separate by timepoint
-  const allAssessments = data.flatMap(client => client.assessments)
-  const t0Data = allAssessments.filter(assessment => assessment.timepoint === 'T0')
-  const t4Data = allAssessments.filter(assessment => assessment.timepoint === 'T4')
+  // Filter to clients with both T0 and T4
+  const pairedClients: PairedClient[] = data
+    .filter(client => {
+      const hasT0 = client.assessments.some(a => a.timepoint === 'T0')
+      const hasT4 = client.assessments.some(a => a.timepoint === 'T4')
+      return hasT0 && hasT4
+    })
+    .map(client => ({
+      t0: client.assessments.find(a => a.timepoint === 'T0')!,
+      t4: client.assessments.find(a => a.timepoint === 'T4')!,
+    }))
 
-  const calculateAverageWithCount = (dataset: Assessment[], field: 'wellbeing' | 'workArea' | 'privateArea' | 'learningExperience' | 'progressAchievement' | 'generalSatisfaction') => {
-    const validValues = dataset.filter(item => item[field] !== null).map(item => item[field] as number)
-    const count = validValues.length
-    const average = count === 0 ? 0 : validValues.reduce((sum, val) => sum + val, 0) / count
-    return { average, count }
-  }
+  // Also keep all T4 data for coaching satisfaction (separate from paired)
+  const allT4Data = data.flatMap(client => client.assessments).filter(a => a.timepoint === 'T4')
 
-  const calculateCategoricalPercentages = (dataset: Assessment[], field: keyof Pick<Assessment, 'stress' | 'exhaustion' | 'anxiety' | 'depression' | 'selfDoubt' | 'sleepProblems' | 'tension' | 'irritability' | 'socialWithdrawal' | 'other'>) => {
-    const counts = { Gering: 0, Mittel: 0, Stark: 0 }
-    let total = 0
+  // Calculate burden field summary (lower is better)
+  const calculateBurdenSummary = (
+    field: keyof Pick<Assessment, 'stress' | 'exhaustion' | 'anxiety' | 'depression' | 'selfDoubt' | 'sleepProblems' | 'tension' | 'irritability' | 'socialWithdrawal' | 'other'>,
+    label: string
+  ): FieldSummary => {
+    let improved = 0
+    let worsened = 0
+    let unchanged = 0
 
-    dataset.forEach(item => {
-      const value = item[field] as keyof typeof counts
-      if (value && value in counts) {
-        counts[value]++
-        total++
+    pairedClients.forEach(pair => {
+      const t0Val = getCategoryValue(pair.t0[field] as string | null)
+      const t4Val = getCategoryValue(pair.t4[field] as string | null)
+
+      if (t0Val > 0 && t4Val > 0) {
+        if (t4Val < t0Val) improved++      // Less burden = improvement
+        else if (t4Val > t0Val) worsened++ // More burden = worsening
+        else unchanged++
       }
     })
 
-    return {
-      percentages: {
-        Gering: total > 0 ? (counts.Gering / total) * 100 : 0,
-        Mittel: total > 0 ? (counts.Mittel / total) * 100 : 0,
-        Stark: total > 0 ? (counts.Stark / total) * 100 : 0,
-      },
-      counts,
-      total,
-    }
+    return { label, improved, worsened, unchanged, total: improved + worsened + unchanged }
   }
 
-  const calculateSelfCarePercentages = (dataset: Assessment[], field: keyof Pick<Assessment, 'adequateSleep' | 'healthyEating' | 'sufficientRest' | 'exercise' | 'setBoundaries' | 'timeForBeauty' | 'shareEmotions' | 'liveValues'>) => {
-    const counts = { Selten: 0, Mittel: 0, Oft: 0 }
-    let total = 0
+  // Calculate self-care field summary (higher is better)
+  const calculateSelfCareSummary = (
+    field: keyof Pick<Assessment, 'adequateSleep' | 'healthyEating' | 'sufficientRest' | 'exercise' | 'setBoundaries' | 'timeForBeauty' | 'shareEmotions' | 'liveValues'>,
+    label: string
+  ): FieldSummary => {
+    let improved = 0
+    let worsened = 0
+    let unchanged = 0
 
-    dataset.forEach(item => {
-      const value = item[field] as keyof typeof counts
-      if (value && value in counts) {
-        counts[value]++
-        total++
+    pairedClients.forEach(pair => {
+      const t0Val = getCategoryValue(pair.t0[field] as string | null)
+      const t4Val = getCategoryValue(pair.t4[field] as string | null)
+
+      if (t0Val > 0 && t4Val > 0) {
+        if (t4Val > t0Val) improved++      // More self-care = improvement
+        else if (t4Val < t0Val) worsened++ // Less self-care = worsening
+        else unchanged++
       }
     })
 
-    return {
-      percentages: {
-        Selten: total > 0 ? (counts.Selten / total) * 100 : 0,
-        Mittel: total > 0 ? (counts.Mittel / total) * 100 : 0,
-        Oft: total > 0 ? (counts.Oft / total) * 100 : 0,
-      },
-      counts,
-      total,
-    }
+    return { label, improved, worsened, unchanged, total: improved + worsened + unchanged }
   }
 
-  // Wellbeing and Life Areas Chart - Calculate with counts
-  const wellbeingT0 = calculateAverageWithCount(t0Data, 'wellbeing')
-  const workT0 = calculateAverageWithCount(t0Data, 'workArea')
-  const privateT0 = calculateAverageWithCount(t0Data, 'privateArea')
+  // Burden summaries
+  const burdenSummaries: FieldSummary[] = [
+    calculateBurdenSummary('stress', 'Stress'),
+    calculateBurdenSummary('exhaustion', 'Erschöpfung'),
+    calculateBurdenSummary('anxiety', 'Angst'),
+    calculateBurdenSummary('depression', 'Depression'),
+    calculateBurdenSummary('selfDoubt', 'Selbstzweifel'),
+    calculateBurdenSummary('sleepProblems', 'Schlafprobl.'),
+    calculateBurdenSummary('tension', 'Anspannung'),
+    calculateBurdenSummary('irritability', 'Reizbarkeit'),
+    calculateBurdenSummary('socialWithdrawal', 'Rückzug'),
+    calculateBurdenSummary('other', 'Anderes'),
+  ]
 
-  const wellbeingT4 = calculateAverageWithCount(t4Data, 'wellbeing')
-  const workT4 = calculateAverageWithCount(t4Data, 'workArea')
-  const privateT4 = calculateAverageWithCount(t4Data, 'privateArea')
+  // Self-care summaries
+  const selfCareSummaries: FieldSummary[] = [
+    calculateSelfCareSummary('adequateSleep', 'Schlaf'),
+    calculateSelfCareSummary('healthyEating', 'Ernährung'),
+    calculateSelfCareSummary('sufficientRest', 'Ruhe'),
+    calculateSelfCareSummary('exercise', 'Sport'),
+    calculateSelfCareSummary('setBoundaries', 'Grenzen'),
+    calculateSelfCareSummary('timeForBeauty', 'Schönes'),
+    calculateSelfCareSummary('shareEmotions', 'Gefühle'),
+    calculateSelfCareSummary('liveValues', 'Werte'),
+  ]
+
+  // Wellbeing comparison (paired data)
+  const calculateWellbeingComparison = () => {
+    const fields: { field: 'wellbeing' | 'workArea' | 'privateArea'; label: string }[] = [
+      { field: 'wellbeing', label: 'Wohlbefinden' },
+      { field: 'workArea', label: 'Arbeit' },
+      { field: 'privateArea', label: 'Privat' },
+    ]
+
+    return fields.map(({ field, label }) => {
+      let sumT0 = 0, sumT4 = 0, count = 0
+
+      pairedClients.forEach(pair => {
+        const t0Val = pair.t0[field]
+        const t4Val = pair.t4[field]
+        if (t0Val !== null && t4Val !== null) {
+          sumT0 += t0Val
+          sumT4 += t4Val
+          count++
+        }
+      })
+
+      return {
+        label,
+        avgT0: count > 0 ? sumT0 / count : 0,
+        avgT4: count > 0 ? sumT4 / count : 0,
+        count,
+      }
+    })
+  }
+
+  const wellbeingData = calculateWellbeingComparison()
 
   const wellbeingChartData = {
-    labels: ['Wohlbefinden', 'Arbeit', 'Privat'],
+    labels: wellbeingData.map(d => d.label),
     datasets: [
       {
         label: 'T0 (Baseline)',
-        data: [
-          wellbeingT0.average,
-          workT0.average,
-          privateT0.average,
-        ],
-        counts: [
-          wellbeingT0.count,
-          workT0.count,
-          privateT0.count,
-        ],
+        data: wellbeingData.map(d => d.avgT0),
+        counts: wellbeingData.map(d => d.count),
         backgroundColor: 'rgba(59, 130, 246, 0.5)',
         borderColor: 'rgb(59, 130, 246)',
         borderWidth: 1,
       },
       {
         label: 'T4 (nach 4 Wochen)',
-        data: [
-          wellbeingT4.average,
-          workT4.average,
-          privateT4.average,
-        ],
-        counts: [
-          wellbeingT4.count,
-          workT4.count,
-          privateT4.count,
-        ],
+        data: wellbeingData.map(d => d.avgT4),
+        counts: wellbeingData.map(d => d.count),
         backgroundColor: 'rgba(16, 185, 129, 0.5)',
         borderColor: 'rgb(16, 185, 129)',
-        borderWidth: 1,
-      },
-    ],
-  }
-
-  // Psychological Burdens Chart - Calculate percentages for all metrics
-  const stressT0 = calculateCategoricalPercentages(t0Data, 'stress')
-  const exhaustionT0 = calculateCategoricalPercentages(t0Data, 'exhaustion')
-  const anxietyT0 = calculateCategoricalPercentages(t0Data, 'anxiety')
-  const depressionT0 = calculateCategoricalPercentages(t0Data, 'depression')
-  const selfDoubtT0 = calculateCategoricalPercentages(t0Data, 'selfDoubt')
-  const sleepProblemsT0 = calculateCategoricalPercentages(t0Data, 'sleepProblems')
-  const tensionT0 = calculateCategoricalPercentages(t0Data, 'tension')
-  const irritabilityT0 = calculateCategoricalPercentages(t0Data, 'irritability')
-  const socialWithdrawalT0 = calculateCategoricalPercentages(t0Data, 'socialWithdrawal')
-  const otherT0 = calculateCategoricalPercentages(t0Data, 'other')
-
-  const stressT4 = calculateCategoricalPercentages(t4Data, 'stress')
-  const exhaustionT4 = calculateCategoricalPercentages(t4Data, 'exhaustion')
-  const anxietyT4 = calculateCategoricalPercentages(t4Data, 'anxiety')
-  const depressionT4 = calculateCategoricalPercentages(t4Data, 'depression')
-  const selfDoubtT4 = calculateCategoricalPercentages(t4Data, 'selfDoubt')
-  const sleepProblemsT4 = calculateCategoricalPercentages(t4Data, 'sleepProblems')
-  const tensionT4 = calculateCategoricalPercentages(t4Data, 'tension')
-  const irritabilityT4 = calculateCategoricalPercentages(t4Data, 'irritability')
-  const socialWithdrawalT4 = calculateCategoricalPercentages(t4Data, 'socialWithdrawal')
-  const otherT4 = calculateCategoricalPercentages(t4Data, 'other')
-
-  const burdensChartData = {
-    labels: ['Stress', 'Erschöpfung', 'Angst', 'Depression', 'Selbstzweifel', 'Schlafprobleme', 'Anspannung', 'Reizbarkeit', 'Rückzug', 'Anderes'],
-    datasets: [
-      {
-        label: 'Gering (T0)',
-        data: [
-          stressT0.percentages.Gering,
-          exhaustionT0.percentages.Gering,
-          anxietyT0.percentages.Gering,
-          depressionT0.percentages.Gering,
-          selfDoubtT0.percentages.Gering,
-          sleepProblemsT0.percentages.Gering,
-          tensionT0.percentages.Gering,
-          irritabilityT0.percentages.Gering,
-          socialWithdrawalT0.percentages.Gering,
-          otherT0.percentages.Gering,
-        ],
-        counts: [
-          stressT0.counts.Gering,
-          exhaustionT0.counts.Gering,
-          anxietyT0.counts.Gering,
-          depressionT0.counts.Gering,
-          selfDoubtT0.counts.Gering,
-          sleepProblemsT0.counts.Gering,
-          tensionT0.counts.Gering,
-          irritabilityT0.counts.Gering,
-          socialWithdrawalT0.counts.Gering,
-          otherT0.counts.Gering,
-        ],
-        backgroundColor: 'rgba(34, 197, 94, 0.5)',
-        borderColor: 'rgb(34, 197, 94)',
-        borderWidth: 1,
-      },
-      {
-        label: 'Mittel (T0)',
-        data: [
-          stressT0.percentages.Mittel,
-          exhaustionT0.percentages.Mittel,
-          anxietyT0.percentages.Mittel,
-          depressionT0.percentages.Mittel,
-          selfDoubtT0.percentages.Mittel,
-          sleepProblemsT0.percentages.Mittel,
-          tensionT0.percentages.Mittel,
-          irritabilityT0.percentages.Mittel,
-          socialWithdrawalT0.percentages.Mittel,
-          otherT0.percentages.Mittel,
-        ],
-        counts: [
-          stressT0.counts.Mittel,
-          exhaustionT0.counts.Mittel,
-          anxietyT0.counts.Mittel,
-          depressionT0.counts.Mittel,
-          selfDoubtT0.counts.Mittel,
-          sleepProblemsT0.counts.Mittel,
-          tensionT0.counts.Mittel,
-          irritabilityT0.counts.Mittel,
-          socialWithdrawalT0.counts.Mittel,
-          otherT0.counts.Mittel,
-        ],
-        backgroundColor: 'rgba(245, 158, 11, 0.5)',
-        borderColor: 'rgb(245, 158, 11)',
-        borderWidth: 1,
-      },
-      {
-        label: 'Stark (T0)',
-        data: [
-          stressT0.percentages.Stark,
-          exhaustionT0.percentages.Stark,
-          anxietyT0.percentages.Stark,
-          depressionT0.percentages.Stark,
-          selfDoubtT0.percentages.Stark,
-          sleepProblemsT0.percentages.Stark,
-          tensionT0.percentages.Stark,
-          irritabilityT0.percentages.Stark,
-          socialWithdrawalT0.percentages.Stark,
-          otherT0.percentages.Stark,
-        ],
-        counts: [
-          stressT0.counts.Stark,
-          exhaustionT0.counts.Stark,
-          anxietyT0.counts.Stark,
-          depressionT0.counts.Stark,
-          selfDoubtT0.counts.Stark,
-          sleepProblemsT0.counts.Stark,
-          tensionT0.counts.Stark,
-          irritabilityT0.counts.Stark,
-          socialWithdrawalT0.counts.Stark,
-          otherT0.counts.Stark,
-        ],
-        backgroundColor: 'rgba(239, 68, 68, 0.5)',
-        borderColor: 'rgb(239, 68, 68)',
-        borderWidth: 1,
-      },
-      {
-        label: 'Gering (T4)',
-        data: [
-          stressT4.percentages.Gering,
-          exhaustionT4.percentages.Gering,
-          anxietyT4.percentages.Gering,
-          depressionT4.percentages.Gering,
-          selfDoubtT4.percentages.Gering,
-          sleepProblemsT4.percentages.Gering,
-          tensionT4.percentages.Gering,
-          irritabilityT4.percentages.Gering,
-          socialWithdrawalT4.percentages.Gering,
-          otherT4.percentages.Gering,
-        ],
-        counts: [
-          stressT4.counts.Gering,
-          exhaustionT4.counts.Gering,
-          anxietyT4.counts.Gering,
-          depressionT4.counts.Gering,
-          selfDoubtT4.counts.Gering,
-          sleepProblemsT4.counts.Gering,
-          tensionT4.counts.Gering,
-          irritabilityT4.counts.Gering,
-          socialWithdrawalT4.counts.Gering,
-          otherT4.counts.Gering,
-        ],
-        backgroundColor: 'rgba(34, 197, 94, 0.8)',
-        borderColor: 'rgb(34, 197, 94)',
-        borderWidth: 1,
-      },
-      {
-        label: 'Mittel (T4)',
-        data: [
-          stressT4.percentages.Mittel,
-          exhaustionT4.percentages.Mittel,
-          anxietyT4.percentages.Mittel,
-          depressionT4.percentages.Mittel,
-          selfDoubtT4.percentages.Mittel,
-          sleepProblemsT4.percentages.Mittel,
-          tensionT4.percentages.Mittel,
-          irritabilityT4.percentages.Mittel,
-          socialWithdrawalT4.percentages.Mittel,
-          otherT4.percentages.Mittel,
-        ],
-        counts: [
-          stressT4.counts.Mittel,
-          exhaustionT4.counts.Mittel,
-          anxietyT4.counts.Mittel,
-          depressionT4.counts.Mittel,
-          selfDoubtT4.counts.Mittel,
-          sleepProblemsT4.counts.Mittel,
-          tensionT4.counts.Mittel,
-          irritabilityT4.counts.Mittel,
-          socialWithdrawalT4.counts.Mittel,
-          otherT4.counts.Mittel,
-        ],
-        backgroundColor: 'rgba(245, 158, 11, 0.8)',
-        borderColor: 'rgb(245, 158, 11)',
-        borderWidth: 1,
-      },
-      {
-        label: 'Stark (T4)',
-        data: [
-          stressT4.percentages.Stark,
-          exhaustionT4.percentages.Stark,
-          anxietyT4.percentages.Stark,
-          depressionT4.percentages.Stark,
-          selfDoubtT4.percentages.Stark,
-          sleepProblemsT4.percentages.Stark,
-          tensionT4.percentages.Stark,
-          irritabilityT4.percentages.Stark,
-          socialWithdrawalT4.percentages.Stark,
-          otherT4.percentages.Stark,
-        ],
-        counts: [
-          stressT4.counts.Stark,
-          exhaustionT4.counts.Stark,
-          anxietyT4.counts.Stark,
-          depressionT4.counts.Stark,
-          selfDoubtT4.counts.Stark,
-          sleepProblemsT4.counts.Stark,
-          tensionT4.counts.Stark,
-          irritabilityT4.counts.Stark,
-          socialWithdrawalT4.counts.Stark,
-          otherT4.counts.Stark,
-        ],
-        backgroundColor: 'rgba(239, 68, 68, 0.8)',
-        borderColor: 'rgb(239, 68, 68)',
         borderWidth: 1,
       },
     ],
@@ -407,7 +304,7 @@ export function ClientDataChart({ data }: ClientDataChartProps) {
       },
       title: {
         display: true,
-        text: 'Durchschnittliche Werte (0-10 Skala)',
+        text: `Wohlbefinden & Lebensbereiche (n=${pairedClients.length} gepaart)`,
       },
       tooltip: {
         callbacks: {
@@ -428,60 +325,25 @@ export function ClientDataChart({ data }: ClientDataChartProps) {
     },
   }
 
-  const burdensOptions = {
-    responsive: true,
-    plugins: {
-      legend: {
-        position: 'top' as const,
-      },
-      title: {
-        display: true,
-        text: 'Psychische Belastungen (in %)',
-      },
-      tooltip: {
-        callbacks: {
-          label: function(context: TooltipItem<'bar'>) {
-            const label = context.dataset.label || ''
-            const percentage = context.parsed.y
-            const count = (context.dataset as DatasetWithCounts).counts?.[context.dataIndex] || 0
-            return `${label}: ${percentage.toFixed(1)}% (n=${count})`
-          }
-        }
-      }
-    },
-    scales: {
-      y: {
-        beginAtZero: true,
-        max: 100,
-        ticks: {
-          callback: function(value: string | number) {
-            return value + '%'
-          }
-        }
-      },
-    },
+  // Coaching satisfaction (T4 only, all clients with T4)
+  const calculateAverageWithCount = (field: 'learningExperience' | 'progressAchievement' | 'generalSatisfaction') => {
+    const validValues = allT4Data.filter(item => item[field] !== null).map(item => item[field] as number)
+    const count = validValues.length
+    const average = count === 0 ? 0 : validValues.reduce((sum, val) => sum + val, 0) / count
+    return { average, count }
   }
 
-  // Coaching Satisfaction Chart (T4 only) - Calculate with counts
-  const learningT4 = calculateAverageWithCount(t4Data, 'learningExperience')
-  const progressT4 = calculateAverageWithCount(t4Data, 'progressAchievement')
-  const satisfactionT4 = calculateAverageWithCount(t4Data, 'generalSatisfaction')
+  const learningT4 = calculateAverageWithCount('learningExperience')
+  const progressT4 = calculateAverageWithCount('progressAchievement')
+  const satisfactionT4 = calculateAverageWithCount('generalSatisfaction')
 
   const coachingSatisfactionData = {
     labels: ['Lernerfahrung', 'Zielerreichung', 'Gesamtzufriedenheit'],
     datasets: [
       {
         label: 'T4 Bewertung',
-        data: [
-          learningT4.average,
-          progressT4.average,
-          satisfactionT4.average,
-        ],
-        counts: [
-          learningT4.count,
-          progressT4.count,
-          satisfactionT4.count,
-        ],
+        data: [learningT4.average, progressT4.average, satisfactionT4.average],
+        counts: [learningT4.count, progressT4.count, satisfactionT4.count],
         backgroundColor: 'rgba(168, 85, 247, 0.5)',
         borderColor: 'rgb(168, 85, 247)',
         borderWidth: 1,
@@ -489,238 +351,70 @@ export function ClientDataChart({ data }: ClientDataChartProps) {
     ],
   }
 
-  // Self-care Chart - Calculate percentages for all metrics
-  const sleepT0 = calculateSelfCarePercentages(t0Data, 'adequateSleep')
-  const eatingT0 = calculateSelfCarePercentages(t0Data, 'healthyEating')
-  const restT0 = calculateSelfCarePercentages(t0Data, 'sufficientRest')
-  const exerciseT0 = calculateSelfCarePercentages(t0Data, 'exercise')
-  const boundariesT0 = calculateSelfCarePercentages(t0Data, 'setBoundaries')
-  const beautyT0 = calculateSelfCarePercentages(t0Data, 'timeForBeauty')
-  const emotionsT0 = calculateSelfCarePercentages(t0Data, 'shareEmotions')
-  const valuesT0 = calculateSelfCarePercentages(t0Data, 'liveValues')
-
-  const sleepT4 = calculateSelfCarePercentages(t4Data, 'adequateSleep')
-  const eatingT4 = calculateSelfCarePercentages(t4Data, 'healthyEating')
-  const restT4 = calculateSelfCarePercentages(t4Data, 'sufficientRest')
-  const exerciseT4 = calculateSelfCarePercentages(t4Data, 'exercise')
-  const boundariesT4 = calculateSelfCarePercentages(t4Data, 'setBoundaries')
-  const beautyT4 = calculateSelfCarePercentages(t4Data, 'timeForBeauty')
-  const emotionsT4 = calculateSelfCarePercentages(t4Data, 'shareEmotions')
-  const valuesT4 = calculateSelfCarePercentages(t4Data, 'liveValues')
-
-  const selfCareData = {
-    labels: ['Schlaf', 'Ernährung', 'Ruhe', 'Sport', 'Grenzen', 'Schönes', 'Gefühle', 'Werte'],
-    datasets: [
-      {
-        label: 'Selten (T0)',
-        data: [
-          sleepT0.percentages.Selten,
-          eatingT0.percentages.Selten,
-          restT0.percentages.Selten,
-          exerciseT0.percentages.Selten,
-          boundariesT0.percentages.Selten,
-          beautyT0.percentages.Selten,
-          emotionsT0.percentages.Selten,
-          valuesT0.percentages.Selten,
-        ],
-        counts: [
-          sleepT0.counts.Selten,
-          eatingT0.counts.Selten,
-          restT0.counts.Selten,
-          exerciseT0.counts.Selten,
-          boundariesT0.counts.Selten,
-          beautyT0.counts.Selten,
-          emotionsT0.counts.Selten,
-          valuesT0.counts.Selten,
-        ],
-        backgroundColor: 'rgba(239, 68, 68, 0.5)',
-        borderColor: 'rgb(239, 68, 68)',
-        borderWidth: 1,
-      },
-      {
-        label: 'Mittel (T0)',
-        data: [
-          sleepT0.percentages.Mittel,
-          eatingT0.percentages.Mittel,
-          restT0.percentages.Mittel,
-          exerciseT0.percentages.Mittel,
-          boundariesT0.percentages.Mittel,
-          beautyT0.percentages.Mittel,
-          emotionsT0.percentages.Mittel,
-          valuesT0.percentages.Mittel,
-        ],
-        counts: [
-          sleepT0.counts.Mittel,
-          eatingT0.counts.Mittel,
-          restT0.counts.Mittel,
-          exerciseT0.counts.Mittel,
-          boundariesT0.counts.Mittel,
-          beautyT0.counts.Mittel,
-          emotionsT0.counts.Mittel,
-          valuesT0.counts.Mittel,
-        ],
-        backgroundColor: 'rgba(245, 158, 11, 0.5)',
-        borderColor: 'rgb(245, 158, 11)',
-        borderWidth: 1,
-      },
-      {
-        label: 'Oft (T0)',
-        data: [
-          sleepT0.percentages.Oft,
-          eatingT0.percentages.Oft,
-          restT0.percentages.Oft,
-          exerciseT0.percentages.Oft,
-          boundariesT0.percentages.Oft,
-          beautyT0.percentages.Oft,
-          emotionsT0.percentages.Oft,
-          valuesT0.percentages.Oft,
-        ],
-        counts: [
-          sleepT0.counts.Oft,
-          eatingT0.counts.Oft,
-          restT0.counts.Oft,
-          exerciseT0.counts.Oft,
-          boundariesT0.counts.Oft,
-          beautyT0.counts.Oft,
-          emotionsT0.counts.Oft,
-          valuesT0.counts.Oft,
-        ],
-        backgroundColor: 'rgba(34, 197, 94, 0.5)',
-        borderColor: 'rgb(34, 197, 94)',
-        borderWidth: 1,
-      },
-      {
-        label: 'Selten (T4)',
-        data: [
-          sleepT4.percentages.Selten,
-          eatingT4.percentages.Selten,
-          restT4.percentages.Selten,
-          exerciseT4.percentages.Selten,
-          boundariesT4.percentages.Selten,
-          beautyT4.percentages.Selten,
-          emotionsT4.percentages.Selten,
-          valuesT4.percentages.Selten,
-        ],
-        counts: [
-          sleepT4.counts.Selten,
-          eatingT4.counts.Selten,
-          restT4.counts.Selten,
-          exerciseT4.counts.Selten,
-          boundariesT4.counts.Selten,
-          beautyT4.counts.Selten,
-          emotionsT4.counts.Selten,
-          valuesT4.counts.Selten,
-        ],
-        backgroundColor: 'rgba(239, 68, 68, 0.8)',
-        borderColor: 'rgb(239, 68, 68)',
-        borderWidth: 1,
-      },
-      {
-        label: 'Mittel (T4)',
-        data: [
-          sleepT4.percentages.Mittel,
-          eatingT4.percentages.Mittel,
-          restT4.percentages.Mittel,
-          exerciseT4.percentages.Mittel,
-          boundariesT4.percentages.Mittel,
-          beautyT4.percentages.Mittel,
-          emotionsT4.percentages.Mittel,
-          valuesT4.percentages.Mittel,
-        ],
-        counts: [
-          sleepT4.counts.Mittel,
-          eatingT4.counts.Mittel,
-          restT4.counts.Mittel,
-          exerciseT4.counts.Mittel,
-          boundariesT4.counts.Mittel,
-          beautyT4.counts.Mittel,
-          emotionsT4.counts.Mittel,
-          valuesT4.counts.Mittel,
-        ],
-        backgroundColor: 'rgba(245, 158, 11, 0.8)',
-        borderColor: 'rgb(245, 158, 11)',
-        borderWidth: 1,
-      },
-      {
-        label: 'Oft (T4)',
-        data: [
-          sleepT4.percentages.Oft,
-          eatingT4.percentages.Oft,
-          restT4.percentages.Oft,
-          exerciseT4.percentages.Oft,
-          boundariesT4.percentages.Oft,
-          beautyT4.percentages.Oft,
-          emotionsT4.percentages.Oft,
-          valuesT4.percentages.Oft,
-        ],
-        counts: [
-          sleepT4.counts.Oft,
-          eatingT4.counts.Oft,
-          restT4.counts.Oft,
-          exerciseT4.counts.Oft,
-          boundariesT4.counts.Oft,
-          beautyT4.counts.Oft,
-          emotionsT4.counts.Oft,
-          valuesT4.counts.Oft,
-        ],
-        backgroundColor: 'rgba(34, 197, 94, 0.8)',
-        borderColor: 'rgb(34, 197, 94)',
-        borderWidth: 1,
-      },
-    ],
-  }
+  // Total summaries
+  const totalBurdenImproved = burdenSummaries.reduce((sum, s) => sum + s.improved, 0)
+  const totalBurdenWorsened = burdenSummaries.reduce((sum, s) => sum + s.worsened, 0)
+  const totalSelfCareImproved = selfCareSummaries.reduce((sum, s) => sum + s.improved, 0)
+  const totalSelfCareWorsened = selfCareSummaries.reduce((sum, s) => sum + s.worsened, 0)
 
   return (
     <div className="space-y-6">
+      {/* Row 1: Wellbeing Chart + Burdens Summary Cards */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <div className="bg-white p-6 rounded-lg shadow">
           <Bar data={wellbeingChartData} options={wellbeingOptions} />
         </div>
+
         <div className="bg-white p-6 rounded-lg shadow">
-          <Bar data={burdensChartData} options={burdensOptions} />
+          <h3 className="text-sm font-medium text-gray-700 mb-1">
+            Psychische Belastungen (n={pairedClients.length} gepaart)
+          </h3>
+          <p className="text-xs text-gray-500 mb-3">
+            {totalBurdenImproved > totalBurdenWorsened ? (
+              <span className="text-green-600">Gesamt: {totalBurdenImproved} Verbesserungen, {totalBurdenWorsened} Verschlechterungen</span>
+            ) : totalBurdenImproved < totalBurdenWorsened ? (
+              <span className="text-red-600">Gesamt: {totalBurdenImproved} Verbesserungen, {totalBurdenWorsened} Verschlechterungen</span>
+            ) : (
+              <span className="text-gray-600">Gesamt: {totalBurdenImproved} Verbesserungen, {totalBurdenWorsened} Verschlechterungen</span>
+            )}
+          </p>
+          <div className="grid grid-cols-5 gap-2">
+            {burdenSummaries.map(summary => (
+              <SummaryCard key={summary.label} {...summary} isPositiveMetric={false} />
+            ))}
+          </div>
+          <p className="text-xs text-gray-400 mt-2 text-center">
+            ↓ = verbessert (Belastung gesunken) | ↑ = verschlechtert
+          </p>
         </div>
       </div>
 
+      {/* Row 2: Self-Care Summary Cards + Coaching Satisfaction */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <div className="bg-white p-6 rounded-lg shadow">
-          <Bar
-            data={selfCareData}
-            options={{
-              responsive: true,
-              plugins: {
-                legend: {
-                  position: 'top' as const,
-                },
-                title: {
-                  display: true,
-                  text: 'Selbstfürsorge (in %)',
-                },
-                tooltip: {
-                  callbacks: {
-                    label: function(context: TooltipItem<'bar'>) {
-                      const label = context.dataset.label || ''
-                      const percentage = context.parsed.y
-                      const count = (context.dataset as DatasetWithCounts).counts?.[context.dataIndex] || 0
-                      return `${label}: ${percentage.toFixed(1)}% (n=${count})`
-                    }
-                  }
-                }
-              },
-              scales: {
-                y: {
-                  beginAtZero: true,
-                  max: 100,
-                  ticks: {
-                    callback: function(value: string | number) {
-                      return value + '%'
-                    }
-                  }
-                },
-              },
-            }}
-          />
+          <h3 className="text-sm font-medium text-gray-700 mb-1">
+            Selbstfürsorge (n={pairedClients.length} gepaart)
+          </h3>
+          <p className="text-xs text-gray-500 mb-3">
+            {totalSelfCareImproved > totalSelfCareWorsened ? (
+              <span className="text-green-600">Gesamt: {totalSelfCareImproved} Verbesserungen, {totalSelfCareWorsened} Verschlechterungen</span>
+            ) : totalSelfCareImproved < totalSelfCareWorsened ? (
+              <span className="text-red-600">Gesamt: {totalSelfCareImproved} Verbesserungen, {totalSelfCareWorsened} Verschlechterungen</span>
+            ) : (
+              <span className="text-gray-600">Gesamt: {totalSelfCareImproved} Verbesserungen, {totalSelfCareWorsened} Verschlechterungen</span>
+            )}
+          </p>
+          <div className="grid grid-cols-4 gap-2">
+            {selfCareSummaries.map(summary => (
+              <SummaryCard key={summary.label} {...summary} isPositiveMetric={true} />
+            ))}
+          </div>
+          <p className="text-xs text-gray-400 mt-2 text-center">
+            ↑ = verbessert (mehr Selbstfürsorge) | ↓ = verschlechtert
+          </p>
         </div>
-        {t4Data.length > 0 && (
+
+        {allT4Data.length > 0 && (
           <div className="bg-white p-6 rounded-lg shadow">
             <Bar
               data={coachingSatisfactionData}
@@ -732,7 +426,7 @@ export function ClientDataChart({ data }: ClientDataChartProps) {
                   },
                   title: {
                     display: true,
-                    text: 'Coaching-Bewertung T4 (0-10 Skala)',
+                    text: `Coaching-Bewertung T4 (n=${allT4Data.length})`,
                   },
                   tooltip: {
                     callbacks: {
