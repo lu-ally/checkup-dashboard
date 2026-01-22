@@ -359,59 +359,10 @@ export function ClientDataChart({ data }: ClientDataChartProps) {
 
   return (
     <div className="space-y-6">
-      {/* Row 1: Wellbeing Chart + Burdens Summary Cards */}
+      {/* Row 1: Wellbeing + Coaching Rating */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <div className="bg-white p-6 rounded-lg shadow">
           <Bar data={wellbeingChartData} options={wellbeingOptions} />
-        </div>
-
-        <div className="bg-white p-6 rounded-lg shadow">
-          <h3 className="text-sm font-medium text-gray-700 mb-1">
-            Psychische Belastungen (n={pairedClients.length} gepaart)
-          </h3>
-          <p className="text-xs text-gray-500 mb-3">
-            {totalBurdenImproved > totalBurdenWorsened ? (
-              <span className="text-green-600">Gesamt: {totalBurdenImproved} Verbesserungen, {totalBurdenWorsened} Verschlechterungen</span>
-            ) : totalBurdenImproved < totalBurdenWorsened ? (
-              <span className="text-red-600">Gesamt: {totalBurdenImproved} Verbesserungen, {totalBurdenWorsened} Verschlechterungen</span>
-            ) : (
-              <span className="text-gray-600">Gesamt: {totalBurdenImproved} Verbesserungen, {totalBurdenWorsened} Verschlechterungen</span>
-            )}
-          </p>
-          <div className="grid grid-cols-5 gap-2">
-            {burdenSummaries.map(summary => (
-              <SummaryCard key={summary.label} {...summary} isPositiveMetric={false} />
-            ))}
-          </div>
-          <p className="text-xs text-gray-400 mt-2 text-center">
-            ↓ = verbessert (Belastung gesunken) | ↑ = verschlechtert
-          </p>
-        </div>
-      </div>
-
-      {/* Row 2: Self-Care Summary Cards + Coaching Satisfaction */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className="bg-white p-6 rounded-lg shadow">
-          <h3 className="text-sm font-medium text-gray-700 mb-1">
-            Selbstfürsorge (n={pairedClients.length} gepaart)
-          </h3>
-          <p className="text-xs text-gray-500 mb-3">
-            {totalSelfCareImproved > totalSelfCareWorsened ? (
-              <span className="text-green-600">Gesamt: {totalSelfCareImproved} Verbesserungen, {totalSelfCareWorsened} Verschlechterungen</span>
-            ) : totalSelfCareImproved < totalSelfCareWorsened ? (
-              <span className="text-red-600">Gesamt: {totalSelfCareImproved} Verbesserungen, {totalSelfCareWorsened} Verschlechterungen</span>
-            ) : (
-              <span className="text-gray-600">Gesamt: {totalSelfCareImproved} Verbesserungen, {totalSelfCareWorsened} Verschlechterungen</span>
-            )}
-          </p>
-          <div className="grid grid-cols-4 gap-2">
-            {selfCareSummaries.map(summary => (
-              <SummaryCard key={summary.label} {...summary} isPositiveMetric={true} />
-            ))}
-          </div>
-          <p className="text-xs text-gray-400 mt-2 text-center">
-            ↑ = verbessert (mehr Selbstfürsorge) | ↓ = verschlechtert
-          </p>
         </div>
 
         {allT4Data.length > 0 && (
@@ -449,6 +400,61 @@ export function ClientDataChart({ data }: ClientDataChartProps) {
             />
           </div>
         )}
+      </div>
+
+      {/* Row 2: Psychological Burdens + Self-Care */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="bg-white p-6 rounded-lg shadow">
+          <h3 className="text-sm font-medium text-gray-700 mb-1">
+            Psychische Belastungen (n={pairedClients.length} gepaart)
+          </h3>
+          <p className="text-xs text-gray-500 mb-2">
+            Wie stark sind Belastungen vorhanden? (Gering → Mittel → Stark)
+          </p>
+          <p className="text-xs text-gray-500 mb-3">
+            {totalBurdenImproved > totalBurdenWorsened ? (
+              <span className="text-green-600">Gesamt: {totalBurdenImproved} verbessert, {totalBurdenWorsened} verschlechtert</span>
+            ) : totalBurdenImproved < totalBurdenWorsened ? (
+              <span className="text-red-600">Gesamt: {totalBurdenImproved} verbessert, {totalBurdenWorsened} verschlechtert</span>
+            ) : (
+              <span className="text-gray-600">Gesamt: {totalBurdenImproved} verbessert, {totalBurdenWorsened} verschlechtert</span>
+            )}
+          </p>
+          <div className="grid grid-cols-5 gap-2">
+            {burdenSummaries.map(summary => (
+              <SummaryCard key={summary.label} {...summary} isPositiveMetric={false} />
+            ))}
+          </div>
+          <p className="text-xs text-gray-400 mt-3 text-center">
+            Verbesserung = weniger Belastung (Stark→Mittel→Gering)
+          </p>
+        </div>
+
+        <div className="bg-white p-6 rounded-lg shadow">
+          <h3 className="text-sm font-medium text-gray-700 mb-1">
+            Selbstfürsorge (n={pairedClients.length} gepaart)
+          </h3>
+          <p className="text-xs text-gray-500 mb-2">
+            Wie oft wird Selbstfürsorge praktiziert? (Selten → Mittel → Oft)
+          </p>
+          <p className="text-xs text-gray-500 mb-3">
+            {totalSelfCareImproved > totalSelfCareWorsened ? (
+              <span className="text-green-600">Gesamt: {totalSelfCareImproved} verbessert, {totalSelfCareWorsened} verschlechtert</span>
+            ) : totalSelfCareImproved < totalSelfCareWorsened ? (
+              <span className="text-red-600">Gesamt: {totalSelfCareImproved} verbessert, {totalSelfCareWorsened} verschlechtert</span>
+            ) : (
+              <span className="text-gray-600">Gesamt: {totalSelfCareImproved} verbessert, {totalSelfCareWorsened} verschlechtert</span>
+            )}
+          </p>
+          <div className="grid grid-cols-4 gap-2">
+            {selfCareSummaries.map(summary => (
+              <SummaryCard key={summary.label} {...summary} isPositiveMetric={true} />
+            ))}
+          </div>
+          <p className="text-xs text-gray-400 mt-3 text-center">
+            Verbesserung = mehr Selbstfürsorge (Selten→Mittel→Oft)
+          </p>
+        </div>
       </div>
     </div>
   )

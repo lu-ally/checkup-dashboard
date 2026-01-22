@@ -84,18 +84,21 @@ export function SelfCareComparison({ pairedAssessments }: SelfCareComparisonProp
       <h3 className="text-sm font-medium text-gray-700 mb-1">
         Selbstfürsorge (n={pairedAssessments.length} gepaart)
       </h3>
+      <p className="text-xs text-gray-500 mb-2">
+        Wie oft wird Selbstfürsorge praktiziert? (Selten → Mittel → Oft)
+      </p>
       <p className="text-xs text-gray-500 mb-3">
         {totalImproved > totalWorsened ? (
           <span className="text-green-600">
-            Gesamt: {totalImproved} Verbesserungen, {totalWorsened} Verschlechterungen, {totalUnchanged} unverändert
+            Gesamt: {totalImproved} verbessert, {totalWorsened} verschlechtert, {totalUnchanged} unverändert
           </span>
         ) : totalImproved < totalWorsened ? (
           <span className="text-red-600">
-            Gesamt: {totalImproved} Verbesserungen, {totalWorsened} Verschlechterungen, {totalUnchanged} unverändert
+            Gesamt: {totalImproved} verbessert, {totalWorsened} verschlechtert, {totalUnchanged} unverändert
           </span>
         ) : (
           <span className="text-gray-600">
-            Gesamt: {totalImproved} Verbesserungen, {totalWorsened} Verschlechterungen, {totalUnchanged} unverändert
+            Gesamt: {totalImproved} verbessert, {totalWorsened} verschlechtert, {totalUnchanged} unverändert
           </span>
         )}
       </p>
@@ -107,7 +110,7 @@ export function SelfCareComparison({ pairedAssessments }: SelfCareComparisonProp
       </div>
 
       <p className="text-xs text-gray-400 mt-3 text-center">
-        ↑ = verbessert (mehr Selbstfürsorge) | ↓ = verschlechtert | → = unverändert
+        Verbesserung = mehr Selbstfürsorge (Selten→Mittel→Oft)
       </p>
     </div>
   )

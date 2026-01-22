@@ -86,18 +86,21 @@ export function BurdensComparison({ pairedAssessments }: BurdensComparisonProps)
       <h3 className="text-sm font-medium text-gray-700 mb-1">
         Psychische Belastungen (n={pairedAssessments.length} gepaart)
       </h3>
+      <p className="text-xs text-gray-500 mb-2">
+        Wie stark sind Belastungen vorhanden? (Gering → Mittel → Stark)
+      </p>
       <p className="text-xs text-gray-500 mb-3">
         {totalImproved > totalWorsened ? (
           <span className="text-green-600">
-            Gesamt: {totalImproved} Verbesserungen, {totalWorsened} Verschlechterungen, {totalUnchanged} unverändert
+            Gesamt: {totalImproved} verbessert, {totalWorsened} verschlechtert, {totalUnchanged} unverändert
           </span>
         ) : totalImproved < totalWorsened ? (
           <span className="text-red-600">
-            Gesamt: {totalImproved} Verbesserungen, {totalWorsened} Verschlechterungen, {totalUnchanged} unverändert
+            Gesamt: {totalImproved} verbessert, {totalWorsened} verschlechtert, {totalUnchanged} unverändert
           </span>
         ) : (
           <span className="text-gray-600">
-            Gesamt: {totalImproved} Verbesserungen, {totalWorsened} Verschlechterungen, {totalUnchanged} unverändert
+            Gesamt: {totalImproved} verbessert, {totalWorsened} verschlechtert, {totalUnchanged} unverändert
           </span>
         )}
       </p>
@@ -109,7 +112,7 @@ export function BurdensComparison({ pairedAssessments }: BurdensComparisonProps)
       </div>
 
       <p className="text-xs text-gray-400 mt-3 text-center">
-        ↓ = verbessert (Belastung gesunken) | ↑ = verschlechtert | → = unverändert
+        Verbesserung = weniger Belastung (Stark→Mittel→Gering)
       </p>
     </div>
   )
