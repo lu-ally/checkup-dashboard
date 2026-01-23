@@ -402,17 +402,18 @@ export function ClientDataChart({ data }: ClientDataChartProps) {
         </div>
 
         {allT4Data.length > 0 && (
-          <div className="bg-white p-6 rounded-lg shadow">
+          <div className="bg-white p-6 rounded-lg shadow h-full flex flex-col">
             <h3 className="text-sm font-medium text-gray-700 mb-4 text-center">
               Coaching-Bewertung T4 (n={allT4Data.length})
             </h3>
-            <div className="grid grid-cols-3 gap-4">
+            <div className="grid grid-cols-3 gap-4 flex-1 min-h-0">
               {/* Lernerfahrung & Zielerreichung (Skala 1-10) */}
-              <div className="col-span-2">
+              <div className="col-span-2 relative h-full">
                 <Bar
                   data={coachingSkala10Data}
                   options={{
                     responsive: true,
+                    maintainAspectRatio: false,
                     plugins: {
                       legend: { display: false },
                       title: {
@@ -442,6 +443,7 @@ export function ClientDataChart({ data }: ClientDataChartProps) {
                   data={coachingSkala5Data}
                   options={{
                     responsive: true,
+                    maintainAspectRatio: false,
                     plugins: {
                       legend: { display: false },
                       title: {
