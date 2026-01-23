@@ -165,19 +165,19 @@ export function T4Summary({ assessments }: T4SummaryProps) {
         <h4 className="text-sm font-medium text-gray-700 mb-3">Coaching-Bewertung</h4>
         <div className="grid grid-cols-3 gap-4 text-center">
           <div>
-            <p className="text-2xl font-bold text-purple-600">{learningAvg.toFixed(1)}</p>
+            <p className="text-2xl font-bold text-purple-600">{learningAvg.toFixed(1)}<span className="text-sm font-normal text-gray-400">/10</span></p>
             <p className="text-xs text-gray-500">Lernerfahrung</p>
           </div>
           <div>
-            <p className="text-2xl font-bold text-purple-600">{progressAvg.toFixed(1)}</p>
+            <p className="text-2xl font-bold text-purple-600">{progressAvg.toFixed(1)}<span className="text-sm font-normal text-gray-400">/10</span></p>
             <p className="text-xs text-gray-500">Zielerreichung</p>
           </div>
           <div>
-            <p className="text-2xl font-bold text-purple-600">{satisfactionAvg.toFixed(1)}</p>
+            <p className="text-2xl font-bold text-purple-600">{satisfactionAvg.toFixed(1)}<span className="text-sm font-normal text-gray-400">/5</span></p>
             <p className="text-xs text-gray-500">Zufriedenheit</p>
           </div>
         </div>
-        <p className="text-xs text-gray-400 mt-2 text-center">Durchschnitt (Skala 1-10)</p>
+        <p className="text-xs text-gray-400 mt-2 text-center">Durchschnitt</p>
       </div>
 
       {/* Burdens Section */}

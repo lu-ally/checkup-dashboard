@@ -406,7 +406,9 @@ export function ClientDataChart({ data }: ClientDataChartProps) {
                         const label = context.dataset.label || ''
                         const value = context.parsed.y
                         const count = (context.dataset as DatasetWithCounts).counts?.[context.dataIndex] || 0
-                        return `${label}: ${value.toFixed(1)}/10 (n=${count})`
+                        // Zufriedenheit (index 2) uses scale 1-5, others use 1-10
+                        const scale = context.dataIndex === 2 ? 5 : 10
+                        return `${label}: ${value.toFixed(1)}/${scale} (n=${count})`
                       }
                     }
                   }
@@ -419,6 +421,9 @@ export function ClientDataChart({ data }: ClientDataChartProps) {
                 },
               }}
             />
+            <p className="text-xs text-gray-400 mt-2 text-center">
+              Lernerfahrung & Zielerreichung: Skala 1-10 | Zufriedenheit: Skala 1-5
+            </p>
           </div>
         )}
       </div>
