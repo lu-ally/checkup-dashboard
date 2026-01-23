@@ -460,7 +460,7 @@ export function ClientDataChart({ data }: ClientDataChartProps) {
                       }
                     },
                     scales: {
-                      y: { beginAtZero: true, max: 5 },
+                      y: { beginAtZero: true, max: 5, position: 'right' as const },
                     },
                   }}
                 />
