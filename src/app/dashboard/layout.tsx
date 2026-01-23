@@ -41,19 +41,29 @@ export default function DashboardLayout({
               <Link href="/dashboard" className="text-xl font-semibold text-gray-900">
                 Checkup Dashboard
               </Link>
-              {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
-              {session?.user && (session.user as any).role === "ADMIN" && (
-                <div className="flex space-x-6">
-                  <Link
-                    href="/dashboard"
-                    className={`text-sm font-medium transition-colors ${
-                      pathname === "/dashboard"
-                        ? "text-blue-600 border-b-2 border-blue-600 pb-2"
-                        : "text-gray-600 hover:text-gray-900"
-                    }`}
-                  >
-                    Klient:innen
-                  </Link>
+              <div className="flex space-x-6">
+                <Link
+                  href="/dashboard"
+                  className={`text-sm font-medium transition-colors ${
+                    pathname === "/dashboard"
+                      ? "text-blue-600 border-b-2 border-blue-600 pb-2"
+                      : "text-gray-600 hover:text-gray-900"
+                  }`}
+                >
+                  Dashboard
+                </Link>
+                <Link
+                  href="/dashboard/clients"
+                  className={`text-sm font-medium transition-colors ${
+                    pathname === "/dashboard/clients" || pathname?.startsWith("/dashboard/clients/")
+                      ? "text-blue-600 border-b-2 border-blue-600 pb-2"
+                      : "text-gray-600 hover:text-gray-900"
+                  }`}
+                >
+                  Klient:innen
+                </Link>
+                {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
+                {session?.user && (session.user as any).role === "ADMIN" && (
                   <Link
                     href="/dashboard/users"
                     className={`text-sm font-medium transition-colors ${
@@ -64,18 +74,8 @@ export default function DashboardLayout({
                   >
                     Benutzer
                   </Link>
-                  <Link
-                    href="/dashboard/analyse"
-                    className={`text-sm font-medium transition-colors ${
-                      pathname === "/dashboard/analyse"
-                        ? "text-blue-600 border-b-2 border-blue-600 pb-2"
-                        : "text-gray-600 hover:text-gray-900"
-                    }`}
-                  >
-                    Analyse
-                  </Link>
-                </div>
-              )}
+                )}
+              </div>
             </div>
             <div className="flex items-center space-x-4">
               {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}

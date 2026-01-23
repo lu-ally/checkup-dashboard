@@ -2,10 +2,8 @@
 
 import { useSession } from "next-auth/react"
 import { useCallback, useEffect, useState } from "react"
-import { ClientDataChart } from "./components/ClientDataChart"
-import { T0Summary } from "./components/T0Summary"
-import { T4Summary } from "./components/T4Summary"
-import { SyncButton } from "./components/SyncButton"
+import { DataTable } from "../components/DataTable"
+import { SyncButton } from "../components/SyncButton"
 
 interface Assessment {
   id: string
@@ -56,11 +54,12 @@ interface ClientData {
   assessments: Assessment[]
 }
 
-export default function DashboardPage() {
+export default function ClientsPage() {
   const { data: session } = useSession()
   const [clientData, setClientData] = useState<ClientData[]>([])
   const [loading, setLoading] = useState(true)
   const [coachFilter, setCoachFilter] = useState("")
+  const [showDeleted, setShowDeleted] = useState(false)
   const [coaches, setCoaches] = useState<{ id: string; name: string }[]>([])
 
   const fetchData = useCallback(async () => {
@@ -93,13 +92,10 @@ export default function DashboardPage() {
     fetchData()
   }, [coachFilter, fetchData])
 
-  // Filter out deleted clients
-  const filteredData = clientData.filter(client => client.status.toLowerCase() !== 'gelöscht')
-
-  // Extract all assessments
-  const allAssessments = filteredData.flatMap(client => client.assessments)
-  const t0Assessments = allAssessments.filter(a => a.timepoint === 'T0')
-  const t4Assessments = allAssessments.filter(a => a.timepoint === 'T4')
+  // Filter data based on showDeleted toggle
+  const filteredData = showDeleted
+    ? clientData
+    : clientData.filter(client => client.status.toLowerCase() !== 'gelöscht')
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const isAdmin = session?.user && (session.user as any).role === "ADMIN"
@@ -116,22 +112,33 @@ export default function DashboardPage() {
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <h2 className="text-2xl font-bold text-gray-900">
-          Analyse
+          Klient:innen
         </h2>
         <div className="flex items-center space-x-4">
           {isAdmin && (
-            <select
-              value={coachFilter}
-              onChange={(e) => setCoachFilter(e.target.value)}
-              className="border border-gray-300 rounded-md px-3 py-2 text-sm"
-            >
-              <option value="">Alle Coaches</option>
-              {coaches.map((coach) => (
-                <option key={coach.name} value={coach.name}>
-                  {coach.name}
-                </option>
-              ))}
-            </select>
+            <>
+              <select
+                value={coachFilter}
+                onChange={(e) => setCoachFilter(e.target.value)}
+                className="border border-gray-300 rounded-md px-3 py-2 text-sm"
+              >
+                <option value="">Alle Coaches</option>
+                {coaches.map((coach) => (
+                  <option key={coach.name} value={coach.name}>
+                    {coach.name}
+                  </option>
+                ))}
+              </select>
+              <label className="flex items-center space-x-2 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={showDeleted}
+                  onChange={(e) => setShowDeleted(e.target.checked)}
+                  className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                />
+                <span className="text-sm text-gray-700">Gelöscht anzeigen</span>
+              </label>
+            </>
           )}
           <SyncButton onSync={fetchData} />
         </div>
@@ -139,29 +146,10 @@ export default function DashboardPage() {
 
       {filteredData.length === 0 ? (
         <div className="text-center py-12">
-          <p className="text-gray-500">Keine Daten verfügbar</p>
+          <p className="text-gray-500">Keine Klient:innen verfügbar</p>
         </div>
       ) : (
-        <div className="space-y-8">
-          {/* T0/T4 Comparison */}
-          <section>
-            <h3 className="text-lg font-semibold text-gray-800 mb-4">T0/T4 Vergleich</h3>
-            <ClientDataChart data={filteredData} />
-          </section>
-
-          {/* T0 and T4 Summaries side by side */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <section>
-              <h3 className="text-lg font-semibold text-gray-800 mb-4">T0 Zusammenfassung (n={t0Assessments.length})</h3>
-              <T0Summary assessments={t0Assessments} />
-            </section>
-
-            <section>
-              <h3 className="text-lg font-semibold text-gray-800 mb-4">T4 Zusammenfassung (n={t4Assessments.length})</h3>
-              <T4Summary assessments={t4Assessments} />
-            </section>
-          </div>
-        </div>
+        <DataTable data={filteredData} />
       )}
     </div>
   )
