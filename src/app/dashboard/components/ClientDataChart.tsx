@@ -358,15 +358,30 @@ export function ClientDataChart({ data }: ClientDataChartProps) {
   const progressT4 = calculateAverageWithCount('progressAchievement')
   const satisfactionT4 = calculateAverageWithCount('generalSatisfaction')
 
-  const coachingSatisfactionData = {
-    labels: ['Lernerfahrung', 'Zielerreichung', 'Gesamtzufriedenheit'],
+  // Zwei getrennte Datensätze für unterschiedliche Skalen
+  const coachingSkala10Data = {
+    labels: ['Lernerfahrung', 'Zielerreichung'],
     datasets: [
       {
-        label: 'T4 Bewertung',
-        data: [learningT4.average, progressT4.average, satisfactionT4.average],
-        counts: [learningT4.count, progressT4.count, satisfactionT4.count],
+        label: 'T4 Bewertung (Skala 1-10)',
+        data: [learningT4.average, progressT4.average],
+        counts: [learningT4.count, progressT4.count],
         backgroundColor: 'rgba(168, 85, 247, 0.5)',
         borderColor: 'rgb(168, 85, 247)',
+        borderWidth: 1,
+      },
+    ],
+  }
+
+  const coachingSkala5Data = {
+    labels: ['Zufriedenheit'],
+    datasets: [
+      {
+        label: 'T4 Bewertung (Skala 1-5)',
+        data: [satisfactionT4.average],
+        counts: [satisfactionT4.count],
+        backgroundColor: 'rgba(236, 72, 153, 0.5)',
+        borderColor: 'rgb(236, 72, 153)',
         borderWidth: 1,
       },
     ],
@@ -388,42 +403,69 @@ export function ClientDataChart({ data }: ClientDataChartProps) {
 
         {allT4Data.length > 0 && (
           <div className="bg-white p-6 rounded-lg shadow">
-            <Bar
-              data={coachingSatisfactionData}
-              options={{
-                responsive: true,
-                plugins: {
-                  legend: {
-                    position: 'top' as const,
-                  },
-                  title: {
-                    display: true,
-                    text: `Coaching-Bewertung T4 (n=${allT4Data.length})`,
-                  },
-                  tooltip: {
-                    callbacks: {
-                      label: function(context: TooltipItem<'bar'>) {
-                        const label = context.dataset.label || ''
-                        const value = context.parsed.y
-                        const count = (context.dataset as DatasetWithCounts).counts?.[context.dataIndex] || 0
-                        // Zufriedenheit (index 2) uses scale 1-5, others use 1-10
-                        const scale = context.dataIndex === 2 ? 5 : 10
-                        return `${label}: ${value.toFixed(1)}/${scale} (n=${count})`
+            <h3 className="text-sm font-medium text-gray-700 mb-4 text-center">
+              Coaching-Bewertung T4 (n={allT4Data.length})
+            </h3>
+            <div className="grid grid-cols-3 gap-4">
+              {/* Lernerfahrung & Zielerreichung (Skala 1-10) */}
+              <div className="col-span-2">
+                <Bar
+                  data={coachingSkala10Data}
+                  options={{
+                    responsive: true,
+                    plugins: {
+                      legend: { display: false },
+                      title: {
+                        display: true,
+                        text: 'Skala 1-10',
+                        font: { size: 11 },
+                      },
+                      tooltip: {
+                        callbacks: {
+                          label: function(context: TooltipItem<'bar'>) {
+                            const value = context.parsed.y
+                            const count = (context.dataset as DatasetWithCounts).counts?.[context.dataIndex] || 0
+                            return `${value.toFixed(1)}/10 (n=${count})`
+                          }
+                        }
                       }
-                    }
-                  }
-                },
-                scales: {
-                  y: {
-                    beginAtZero: true,
-                    max: 10,
-                  },
-                },
-              }}
-            />
-            <p className="text-xs text-gray-400 mt-2 text-center">
-              Lernerfahrung & Zielerreichung: Skala 1-10 | Zufriedenheit: Skala 1-5
-            </p>
+                    },
+                    scales: {
+                      y: { beginAtZero: true, max: 10 },
+                    },
+                  }}
+                />
+              </div>
+              {/* Zufriedenheit (Skala 1-5) */}
+              <div className="col-span-1">
+                <Bar
+                  data={coachingSkala5Data}
+                  options={{
+                    responsive: true,
+                    plugins: {
+                      legend: { display: false },
+                      title: {
+                        display: true,
+                        text: 'Skala 1-5',
+                        font: { size: 11 },
+                      },
+                      tooltip: {
+                        callbacks: {
+                          label: function(context: TooltipItem<'bar'>) {
+                            const value = context.parsed.y
+                            const count = (context.dataset as DatasetWithCounts).counts?.[context.dataIndex] || 0
+                            return `${value.toFixed(1)}/5 (n=${count})`
+                          }
+                        }
+                      }
+                    },
+                    scales: {
+                      y: { beginAtZero: true, max: 5 },
+                    },
+                  }}
+                />
+              </div>
+            </div>
           </div>
         )}
       </div>
