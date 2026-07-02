@@ -87,6 +87,28 @@ export function getComparisonBgColor(
   return isImprovement ? 'bg-green-50' : 'bg-red-50'
 }
 
+// Get background color class for a card with only one answered timepoint.
+// Uses the same severity mapping as the pill (getCategoryBadgeColor), but in a weak tone
+// so the pill stays readable on top of it.
+export function getSingleValueBgColor(category: string | null): string {
+  if (!category) return 'bg-gray-50'
+
+  const normalized = category.toLowerCase().trim()
+
+  switch (normalized) {
+    case 'gering':
+    case 'selten':
+      return 'bg-green-50'
+    case 'mittel':
+      return 'bg-yellow-50'
+    case 'stark':
+    case 'oft':
+      return 'bg-red-50'
+    default:
+      return 'bg-gray-50'
+  }
+}
+
 // Get badge color for categorical values
 export function getCategoryBadgeColor(category: string | null): string {
   if (!category) return 'bg-gray-100 text-gray-800'

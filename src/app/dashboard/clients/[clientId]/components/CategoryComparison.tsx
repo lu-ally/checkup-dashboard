@@ -2,7 +2,8 @@ import {
   getCategoryValue,
   getCategoryBadgeColor,
   calculateChange,
-  getComparisonBgColor
+  getComparisonBgColor,
+  getSingleValueBgColor
 } from '@/lib/assessmentUtils'
 import { ComparisonIndicator } from './ComparisonIndicator'
 
@@ -19,10 +20,17 @@ export function CategoryComparison({
   t4Value,
   isPositiveMetric = false
 }: CategoryComparisonProps) {
-  const t0Numeric = getCategoryValue(t0Value)
-  const t4Numeric = getCategoryValue(t4Value)
-  const change = calculateChange(t0Numeric, t4Numeric)
-  const bgColorClass = getComparisonBgColor(change, isPositiveMetric)
+  let bgColorClass: string
+  let change = 0
+
+  if (t0Value && t4Value) {
+    const t0Numeric = getCategoryValue(t0Value)
+    const t4Numeric = getCategoryValue(t4Value)
+    change = calculateChange(t0Numeric, t4Numeric)
+    bgColorClass = getComparisonBgColor(change, isPositiveMetric)
+  } else {
+    bgColorClass = getSingleValueBgColor(t0Value || t4Value)
+  }
 
   return (
     <div className={`p-3 rounded-lg border ${bgColorClass}`}>
