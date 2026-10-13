@@ -47,9 +47,7 @@ model Client {
   // Relationships
   assessments Assessment[]
 
-  @@index([clientId])
   @@index([coachName])
-  @@index([status])
 }
 
 // Detailed assessment data from T0/T4 tabs
@@ -104,8 +102,6 @@ model Assessment {
   client Client @relation(fields: [clientId], references: [clientId])
 
   @@index([clientId])
-  @@index([timepoint])
-  @@index([submittedAt])
 }
 
 // Keep old model for backward compatibility during migration

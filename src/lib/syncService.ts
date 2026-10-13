@@ -5,24 +5,43 @@ import type { ClientData } from './googleSheets'
 export interface SyncResult {
   success: boolean
   clientsCreated: number
+  clientsUpdated: number
+  clientsDeleted: number
   assessmentsCreated: number
+  assessmentsUpdated: number
+  assessmentsDeleted: number
   totalClients: number
+  totalAssessments: number
   duration: number
   error?: string
 }
 
 export interface SyncStats {
   fetchDuration: number
-  deleteDuration: number
-  insertDuration: number
+  diffDuration: number
+  writeDuration: number
   totalDuration: number
+}
+
+type ClientRow = ReturnType<typeof prepareBatchData>['clientsToCreate'][number]
+type AssessmentRow = ReturnType<typeof prepareBatchData>['assessmentsToCreate'][number]
+
+const emptyCounts = {
+  clientsCreated: 0,
+  clientsUpdated: 0,
+  clientsDeleted: 0,
+  assessmentsCreated: 0,
+  assessmentsUpdated: 0,
+  assessmentsDeleted: 0,
 }
 
 /**
  * Optimierte Synchronisations-Funktion für Google Sheets Daten
  *
  * Performance-Optimierungen:
- * - Batch-Inserts statt sequenzieller Operationen
+ * - Diff-Sync: nur neue, geänderte und entfernte Zeilen werden geschrieben
+ *   (spart Disk IO gegenüber komplettem Löschen und Neuschreiben)
+ * - Batch-Inserts für neue Zeilen
  * - Transaktionssicherheit
  * - Detailliertes Performance-Logging
  */
@@ -30,8 +49,8 @@ export async function syncClientDataFromSheets(): Promise<SyncResult> {
   const startTime = Date.now()
   const stats: SyncStats = {
     fetchDuration: 0,
-    deleteDuration: 0,
-    insertDuration: 0,
+    diffDuration: 0,
+    writeDuration: 0,
     totalDuration: 0
   }
 
@@ -46,9 +65,9 @@ export async function syncClientDataFromSheets(): Promise<SyncResult> {
     if (clientData.length === 0) {
       return {
         success: true,
-        clientsCreated: 0,
-        assessmentsCreated: 0,
+        ...emptyCounts,
         totalClients: 0,
+        totalAssessments: 0,
         duration: Date.now() - startTime
       }
     }
@@ -60,37 +79,79 @@ export async function syncClientDataFromSheets(): Promise<SyncResult> {
     const prepareDuration = Date.now() - prepareStart
     console.log(`✅ Prepared ${clientsToCreate.length} clients and ${assessmentsToCreate.length} assessments in ${prepareDuration}ms`)
 
-    // Step 3: Execute database operations in transaction
+    // Step 3: Diff against database and write only changes
     console.log('💾 Starting database transaction...')
     const dbStart = Date.now()
 
     const result = await prisma.$transaction(async (tx) => {
-      // Delete existing data
-      const deleteStart = Date.now()
-      await tx.assessment.deleteMany()
-      await tx.client.deleteMany()
-      stats.deleteDuration = Date.now() - deleteStart
-      console.log(`🗑️  Cleared existing data in ${stats.deleteDuration}ms`)
+      const diffStart = Date.now()
+      const [existingClients, existingAssessments] = await Promise.all([
+        tx.client.findMany(),
+        tx.assessment.findMany()
+      ])
 
-      // Insert clients in batch
-      const insertStart = Date.now()
-      const clientResult = await tx.client.createMany({
-        data: clientsToCreate
-      })
-      console.log(`✅ Created ${clientResult.count} clients`)
+      const clientDiff = diffRows(
+        existingClients,
+        clientsToCreate,
+        (row) => row.clientId
+      )
+      const assessmentDiff = diffRows(
+        existingAssessments,
+        assessmentsToCreate,
+        (row) => `${row.clientId}:${row.timepoint}`
+      )
 
-      // Insert assessments in batch
-      const assessmentResult = await tx.assessment.createMany({
-        data: assessmentsToCreate
-      })
-      console.log(`✅ Created ${assessmentResult.count} assessments`)
+      // Assessments of removed clients must go before the clients (FK)
+      const removedClientIds = new Set(clientDiff.toDelete.map((row) => row.clientId))
+      const assessmentIdsToDelete = new Set(assessmentDiff.toDelete.map((row) => row.id))
+      for (const assessment of existingAssessments) {
+        if (removedClientIds.has(assessment.clientId)) {
+          assessmentIdsToDelete.add(assessment.id)
+        }
+      }
+      stats.diffDuration = Date.now() - diffStart
+      console.log(`🔍 Diff: clients +${clientDiff.toCreate.length} ~${clientDiff.toUpdate.length} -${clientDiff.toDelete.length}, assessments +${assessmentDiff.toCreate.length} ~${assessmentDiff.toUpdate.length} -${assessmentIdsToDelete.size}`)
 
-      stats.insertDuration = Date.now() - insertStart
+      const writeStart = Date.now()
+
+      if (assessmentIdsToDelete.size > 0) {
+        await tx.assessment.deleteMany({
+          where: { id: { in: [...assessmentIdsToDelete] } }
+        })
+      }
+      if (clientDiff.toDelete.length > 0) {
+        await tx.client.deleteMany({
+          where: { id: { in: clientDiff.toDelete.map((row) => row.id) } }
+        })
+      }
+
+      for (const { id, data } of clientDiff.toUpdate) {
+        await tx.client.update({ where: { id }, data })
+      }
+      if (clientDiff.toCreate.length > 0) {
+        await tx.client.createMany({ data: clientDiff.toCreate })
+      }
+
+      for (const { id, data } of assessmentDiff.toUpdate) {
+        await tx.assessment.update({ where: { id }, data })
+      }
+      if (assessmentDiff.toCreate.length > 0) {
+        await tx.assessment.createMany({ data: assessmentDiff.toCreate })
+      }
+
+      stats.writeDuration = Date.now() - writeStart
 
       return {
-        clientsCreated: clientResult.count,
-        assessmentsCreated: assessmentResult.count
+        clientsCreated: clientDiff.toCreate.length,
+        clientsUpdated: clientDiff.toUpdate.length,
+        clientsDeleted: clientDiff.toDelete.length,
+        assessmentsCreated: assessmentDiff.toCreate.length,
+        assessmentsUpdated: assessmentDiff.toUpdate.length,
+        assessmentsDeleted: assessmentIdsToDelete.size
       }
+    }, {
+      // Large first-time diffs may need many single updates
+      timeout: 60_000
     })
 
     const dbDuration = Date.now() - dbStart
@@ -99,14 +160,14 @@ export async function syncClientDataFromSheets(): Promise<SyncResult> {
     console.log(`✅ Transaction completed in ${dbDuration}ms`)
     console.log(`📊 Total sync duration: ${stats.totalDuration}ms`)
     console.log(`   - Fetch: ${stats.fetchDuration}ms`)
-    console.log(`   - Delete: ${stats.deleteDuration}ms`)
-    console.log(`   - Insert: ${stats.insertDuration}ms`)
+    console.log(`   - Diff: ${stats.diffDuration}ms`)
+    console.log(`   - Write: ${stats.writeDuration}ms`)
 
     return {
       success: true,
-      clientsCreated: result.clientsCreated,
-      assessmentsCreated: result.assessmentsCreated,
-      totalClients: clientData.length,
+      ...result,
+      totalClients: clientsToCreate.length,
+      totalAssessments: assessmentsToCreate.length,
       duration: stats.totalDuration
     }
 
@@ -118,13 +179,58 @@ export async function syncClientDataFromSheets(): Promise<SyncResult> {
 
     return {
       success: false,
-      clientsCreated: 0,
-      assessmentsCreated: 0,
+      ...emptyCounts,
       totalClients: 0,
+      totalAssessments: 0,
       duration,
       error: errorMessage
     }
   }
+}
+
+/**
+ * Vergleicht bestehende DB-Zeilen mit den Sheet-Daten anhand eines Schlüssels.
+ * Nur Felder aus den Sheet-Daten werden verglichen (undefined zählt als null).
+ */
+function diffRows<
+  TExisting extends { id: string; clientId: string },
+  TIncoming extends ClientRow | AssessmentRow
+>(
+  existing: TExisting[],
+  incoming: TIncoming[],
+  keyOf: (row: { clientId: string; timepoint?: string }) => string
+) {
+  const existingByKey = new Map(existing.map((row) => [keyOf(row), row]))
+  const incomingKeys = new Set<string>()
+
+  const toCreate: TIncoming[] = []
+  const toUpdate: Array<{ id: string; data: TIncoming }> = []
+
+  for (const row of incoming) {
+    const key = keyOf(row)
+    incomingKeys.add(key)
+    const current = existingByKey.get(key)
+    if (!current) {
+      toCreate.push(row)
+    } else if (hasChanges(current as Record<string, unknown>, row as Record<string, unknown>)) {
+      toUpdate.push({ id: current.id, data: row })
+    }
+  }
+
+  const toDelete = existing.filter((row) => !incomingKeys.has(keyOf(row)))
+
+  return { toCreate, toUpdate, toDelete }
+}
+
+function hasChanges(current: Record<string, unknown>, incoming: Record<string, unknown>) {
+  return Object.keys(incoming).some((field) => !sameValue(current[field], incoming[field]))
+}
+
+function sameValue(a: unknown, b: unknown) {
+  if (a instanceof Date || b instanceof Date) {
+    return a instanceof Date && b instanceof Date && a.getTime() === b.getTime()
+  }
+  return (a ?? null) === (b ?? null)
 }
 
 /**

@@ -61,16 +61,21 @@ export async function GET(request: NextRequest) {
 
     console.log(`✅ Scheduled sync completed successfully`)
     console.log(`   Duration: ${result.duration}ms`)
-    console.log(`   Clients: ${result.clientsCreated}`)
-    console.log(`   Assessments: ${result.assessmentsCreated}`)
+    console.log(`   Clients: +${result.clientsCreated} ~${result.clientsUpdated} -${result.clientsDeleted}`)
+    console.log(`   Assessments: +${result.assessmentsCreated} ~${result.assessmentsUpdated} -${result.assessmentsDeleted}`)
 
     return NextResponse.json({
       success: true,
       message: 'Scheduled sync completed',
       stats: {
         clientsCreated: result.clientsCreated,
+        clientsUpdated: result.clientsUpdated,
+        clientsDeleted: result.clientsDeleted,
         assessmentsCreated: result.assessmentsCreated,
+        assessmentsUpdated: result.assessmentsUpdated,
+        assessmentsDeleted: result.assessmentsDeleted,
         totalClients: result.totalClients,
+        totalAssessments: result.totalAssessments,
         duration: `${result.duration}ms`
       },
       timestamp: new Date().toISOString()

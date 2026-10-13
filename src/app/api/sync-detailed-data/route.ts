@@ -50,8 +50,13 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({
       message: 'Detailed data synchronized successfully',
       clientsCreated: result.clientsCreated,
+      clientsUpdated: result.clientsUpdated,
+      clientsDeleted: result.clientsDeleted,
       assessmentsCreated: result.assessmentsCreated,
+      assessmentsUpdated: result.assessmentsUpdated,
+      assessmentsDeleted: result.assessmentsDeleted,
       totalClients: result.totalClients,
+      totalAssessments: result.totalAssessments,
       duration: `${result.duration}ms`
     })
 

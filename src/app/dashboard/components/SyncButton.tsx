@@ -21,7 +21,9 @@ export function SyncButton({ onSync }: SyncButtonProps) {
 
       if (response.ok) {
         const result = await response.json()
-        setMessage(`✅ ${result.clientsCreated} Klienten und ${result.assessmentsCreated} Bewertungen synchronisiert`)
+        const changes = result.clientsCreated + result.clientsUpdated + result.clientsDeleted
+          + result.assessmentsCreated + result.assessmentsUpdated + result.assessmentsDeleted
+        setMessage(`✅ ${result.totalClients} Klienten und ${result.totalAssessments} Bewertungen synchronisiert (${changes} Änderungen)`)
 
         // Small delay to ensure database commits are complete
         await new Promise(resolve => setTimeout(resolve, 500))
