@@ -26,7 +26,14 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url)
     const coachFilter = searchParams.get('coach')
 
-    const whereClause: { coachName?: string } = {}
+    const includeDeleted = searchParams.get('includeDeleted') === 'true'
+
+    const whereClause: { coachName?: string; inClientList?: boolean } = {}
+
+    // Klient:innen, die nicht in der Klient:innen-Liste stehen, nur auf Wunsch
+    if (!includeDeleted) {
+      whereClause.inClientList = true
+    }
 
     // Role-based access control
     if (session.user.role === 'COACH') {

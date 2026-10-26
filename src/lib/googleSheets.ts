@@ -11,6 +11,7 @@ export interface ClientOverview {
   chatLink: string
   wellbeingT0Basic: number | null // Basic wellbeing from overview
   wellbeingT4Basic: number | null
+  inClientList: boolean // false: nur in T0/T4 vorhanden, nicht in der Klient:innen-Liste
 }
 
 // Detailed assessment data from T0/T4 tabs
@@ -170,6 +171,7 @@ class GoogleSheetsService {
         chatLink: row[1] || '',
         wellbeingT0Basic: parseWellbeing(row[2]),
         wellbeingT4Basic: parseWellbeing(row[3]),
+        inClientList: true,
       })
     })
 
@@ -272,6 +274,34 @@ class GoogleSheetsService {
 
       combinedData.push({
         overview,
+        assessmentT0,
+        assessmentT4,
+      })
+    })
+
+    // Klient:innen, die nur in T0/T4 stehen (nicht in der Liste), per ID zusammenführen
+    const orphanIds = new Set<string>()
+    t0Assessments.forEach((_, clientId) => { if (!overviewData.has(clientId)) orphanIds.add(clientId) })
+    t4Assessments.forEach((_, clientId) => { if (!overviewData.has(clientId)) orphanIds.add(clientId) })
+
+    orphanIds.forEach(clientId => {
+      const assessmentT0 = t0Assessments.get(clientId) || null
+      const assessmentT4 = t4Assessments.get(clientId) || null
+      const firstSubmitted = assessmentT0?.submittedAt ?? assessmentT4?.submittedAt ?? new Date()
+
+      combinedData.push({
+        overview: {
+          clientId,
+          clientName: `Klient ${clientId.substring(0, 8)}`,
+          coachName: 'Unbekannter Coach',
+          status: 'Gelöscht',
+          registrationDate: firstSubmitted,
+          weeks: 0,
+          chatLink: '',
+          wellbeingT0Basic: assessmentT0?.wellbeing ?? null,
+          wellbeingT4Basic: assessmentT4?.wellbeing ?? null,
+          inClientList: false,
+        },
         assessmentT0,
         assessmentT4,
       })

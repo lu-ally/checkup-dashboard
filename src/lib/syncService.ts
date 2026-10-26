@@ -247,6 +247,7 @@ function prepareBatchData(clientData: ClientData[]) {
     chatLink: string
     wellbeingT0Basic: number | null
     wellbeingT4Basic: number | null
+    inClientList: boolean
   }> = []
 
   const assessmentsToCreate: Array<{
@@ -295,6 +296,7 @@ function prepareBatchData(clientData: ClientData[]) {
       chatLink: client.overview.chatLink,
       wellbeingT0Basic: client.overview.wellbeingT0Basic,
       wellbeingT4Basic: client.overview.wellbeingT4Basic,
+      inClientList: client.overview.inClientList,
     })
 
     // Add T0 assessment if available

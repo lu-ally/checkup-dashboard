@@ -33,6 +33,9 @@ model Client {
   weeks            Float
   chatLink         String
 
+  // false: ID taucht nur in T0/T4 auf, nicht in der Klient:innen-Liste
+  inClientList     Boolean @default(true)
+
   // Basic wellbeing from overview tab
   wellbeingT0Basic Int?
   wellbeingT4Basic Int?

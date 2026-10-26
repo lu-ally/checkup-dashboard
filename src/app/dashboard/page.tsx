@@ -61,6 +61,7 @@ export default function DashboardPage() {
   const [clientData, setClientData] = useState<ClientData[]>([])
   const [loading, setLoading] = useState(true)
   const [coachFilter, setCoachFilter] = useState("")
+  const [showDeleted, setShowDeleted] = useState(false)
   const [coaches, setCoaches] = useState<{ id: string; name: string }[]>([])
 
   const fetchData = useCallback(async () => {
@@ -69,6 +70,10 @@ export default function DashboardPage() {
       const url = new URL("/api/client-data", window.location.origin)
       if (coachFilter) {
         url.searchParams.set("coach", coachFilter)
+      }
+
+      if (showDeleted) {
+        url.searchParams.set("includeDeleted", "true")
       }
 
       const response = await fetch(url.toString())
@@ -87,17 +92,14 @@ export default function DashboardPage() {
     } finally {
       setLoading(false)
     }
-  }, [coachFilter])
+  }, [coachFilter, showDeleted])
 
   useEffect(() => {
     fetchData()
-  }, [coachFilter, fetchData])
-
-  // Filter out deleted clients
-  const filteredData = clientData.filter(client => client.status.toLowerCase() !== 'gelöscht')
+  }, [fetchData])
 
   // Extract all assessments
-  const allAssessments = filteredData.flatMap(client => client.assessments)
+  const allAssessments = clientData.flatMap(client => client.assessments)
   const t0Assessments = allAssessments.filter(a => a.timepoint === 'T0')
   const t4Assessments = allAssessments.filter(a => a.timepoint === 'T4')
 
@@ -120,6 +122,17 @@ export default function DashboardPage() {
         </h2>
         <div className="flex items-center space-x-4">
           {isAdmin && (
+            <label className="flex items-center space-x-2 text-sm text-gray-700">
+              <input
+                type="checkbox"
+                checked={showDeleted}
+                onChange={(e) => setShowDeleted(e.target.checked)}
+                className="rounded border-gray-300"
+              />
+              <span>gelöschte Klient:innen anzeigen</span>
+            </label>
+          )}
+          {isAdmin && (
             <select
               value={coachFilter}
               onChange={(e) => setCoachFilter(e.target.value)}
@@ -137,7 +150,7 @@ export default function DashboardPage() {
         </div>
       </div>
 
-      {filteredData.length === 0 ? (
+      {clientData.length === 0 ? (
         <div className="text-center py-12">
           <p className="text-gray-500">Keine Daten verfügbar</p>
         </div>
@@ -146,7 +159,7 @@ export default function DashboardPage() {
           {/* T0/T4 Comparison */}
           <section>
             <h3 className="text-lg font-semibold text-gray-800 mb-4">T0/T4 Vergleich</h3>
-            <ClientDataChart data={filteredData} />
+            <ClientDataChart data={clientData} />
           </section>
 
           {/* T0 and T4 Summaries side by side */}
